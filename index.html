@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>TYPE-02 PROTO OS - TACTICAL</title>
+    <title>Utiler TYPE-PROTO OS</title>
     <style>
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
@@ -17,7 +17,7 @@
         }
 
         :root {
-            --hud-color: #ff0000; /* 初期は赤 */
+            --hud-color: #ff0000; /* 初期：警告赤 */
         }
 
         #hud-overlay {
@@ -25,9 +25,9 @@
             z-index: 2; color: var(--hud-color);
             text-shadow: 0 0 8px var(--hud-color);
             pointer-events: none;
-            border: 8px solid var(--hud-color); /* 枠を少し細くして視界を確保 */
+            border: 8px solid var(--hud-color);
             box-sizing: border-box;
-            transition: all 0.4s ease-in-out;
+            transition: all 0.5s ease-in-out;
         }
 
         .info-box { position: absolute; font-size: 14px; line-height: 1.4; font-weight: bold; }
@@ -35,8 +35,6 @@
         .top-right { top: 30px; right: 30px; text-align: right; }
         .bottom-left { bottom: 30px; left: 30px; }
         .bottom-right { bottom: 30px; right: 30px; text-align: right; }
-
-        /* 照準（reticle）のスタイルを削除しました */
     </style>
 </head>
 <body>
@@ -45,24 +43,24 @@
 
     <div id="hud-overlay">
         <div class="info-box top-left">
-            OP_TIME: <span id="timer">00:00:00</span><br>
-            NET: ENCRYPTED
+            RUN_TIME: <span id="timer">00:00:00</span><br>
+            MODE: LOGICAL_ACTIVE
         </div>
 
         <div class="info-box top-right">
-            <div id="system-status">STATUS: INITIALIZING...</div>
+            <div id="system-status">SYS_BOOT: WAITING...</div>
             <div id="clock">00:00:00</div>
         </div>
 
         <div class="info-box bottom-left">
             LAT: <span id="lat">---.----</span><br>
             LON: <span id="lon">---.----</span><br>
-            GPS: <span id="gps-status">NO SIGNAL</span>
+            GPS: <span id="gps-status">SEARCHING</span>
         </div>
 
         <div class="info-box bottom-right">
-            UNIT: TYPE-02 PROTO<br>
-            OS: KERNEL_P-MODEL_v3.0
+            UNIT: Utiler TYPE-PROTO<br>
+            OS: UTILITY_KERNEL_v1.0
         </div>
     </div>
 
@@ -77,6 +75,7 @@
 
         let startTime = Date.now();
 
+        // GPS監視
         function startTracking() {
             if ("geolocation" in navigator) {
                 navigator.geolocation.watchPosition(
@@ -84,13 +83,13 @@
                         latElement.innerText = pos.coords.latitude.toFixed(4);
                         lonElement.innerText = pos.coords.longitude.toFixed(4);
                         gpsStatus.innerText = "LOCKED";
-                        systemStatus.innerText = "STATUS: STABLE";
-                        document.documentElement.style.setProperty('--hud-color', "#adff2f");
+                        systemStatus.innerText = "SYS_BOOT: STABLE";
+                        document.documentElement.style.setProperty('--hud-color', "#adff2f"); // 安定の黄緑
                     },
                     (err) => {
                         gpsStatus.innerText = "LOST";
-                        systemStatus.innerText = "STATUS: DANGER";
-                        document.documentElement.style.setProperty('--hud-color', "#ff0000");
+                        systemStatus.innerText = "SYS_BOOT: DANGER";
+                        document.documentElement.style.setProperty('--hud-color', "#ff0000"); // 警告の赤
                     },
                     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
                 );
@@ -105,7 +104,7 @@
                 });
                 video.srcObject = stream;
             } catch (err) {
-                systemStatus.innerText = "STATUS: CAM_ERROR";
+                systemStatus.innerText = "SYS_BOOT: ERROR";
             }
         }
 
