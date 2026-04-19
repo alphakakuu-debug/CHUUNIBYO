@@ -3,85 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>TYPE-02 PROTO OS v2</title>
+    <title>TYPE-02 PROTO OS v3</title>
     <style>
         body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #000;
-            overflow: hidden;
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: #000; overflow: hidden;
             font-family: 'Courier New', Courier, monospace;
         }
 
-        /* 背面カメラ表示 */
         #camera-view {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            z-index: 1;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: cover; z-index: 1;
         }
 
-        /* HUDオーバーレイ：充電状態で色が変わる変数 */
-        :root {
-            --hud-color: #ff0000; /* デフォルトは赤（警告） */
-        }
+        :root { --hud-color: #adff2f; /* 黄緑をデフォルトに設定 */ }
 
         #hud-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 2;
-            color: var(--hud-color);
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 2; color: var(--hud-color);
             text-shadow: 0 0 5px var(--hud-color);
             pointer-events: none;
-            /* 外枠（フレーム） */
-            border: 15px solid var(--hud-color);
+            border: 10px solid var(--hud-color);
             box-sizing: border-box;
-            transition: all 0.5s ease; /* 色の変化を滑らかに */
+            transition: all 0.5s ease;
         }
 
-        /* 右上の情報表示 */
-        .status-bar {
-            position: absolute;
-            top: 30px;
-            right: 30px;
-            text-align: right;
-            font-size: 16px;
-            line-height: 1.5;
-        }
+        /* 四隅の情報配置 */
+        .info-box { position: absolute; font-size: 14px; line-height: 1.4; }
+        .top-left { top: 25px; left: 25px; }
+        .top-right { top: 25px; right: 25px; text-align: right; }
+        .bottom-left { bottom: 25px; left: 25px; }
+        .bottom-right { bottom: 25px; right: 25px; text-align: right; }
 
-        /* カウントアップタイマー（左上） */
-        .mission-timer {
-            position: absolute;
-            top: 30px;
-            left: 30px;
-            font-size: 16px;
-        }
-
-        /* 中央のレティクル */
         .reticle {
-            position: absolute;
-            top: 50%;
-            left: 50%;
+            position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 120px;
-            height: 120px;
-            border: 2px solid var(--hud-color);
-            border-radius: 50%;
-            opacity: 0.6;
-        }
-
-        /* 充電状態のラベル */
-        #power-status {
-            font-weight: bold;
-            font-size: 20px;
+            width: 150px; height: 150px;
+            border: 1px solid var(--hud-color); border-radius: 50%;
+            opacity: 0.5;
         }
     </style>
 </head>
@@ -90,79 +49,89 @@
     <video id="camera-view" autoplay playsinline muted></video>
 
     <div id="hud-overlay">
-        <div class="mission-timer">
-            OP_TIME: <span id="timer">00:00:00</span>
+        <div class="info-box top-left">
+            OP_TIME: <span id="timer">00:00:00</span><br>
+            SIGNAL: <span id="signal">ENCRYPTED</span>
         </div>
-        <div class="status-bar">
-            <div id="power-status">STATUS: DISCONNECTED</div>
+
+        <div class="info-box top-right">
+            <div id="power-status">STATUS: STABLE</div>
             <div id="clock">00:00:00</div>
         </div>
+
+        <div class="info-box bottom-left">
+            LAT: <span id="lat">---.----</span><br>
+            LON: <span id="lon">---.----</span><br>
+            LOC: <span id="loc-status">ACQUIRING...</span>
+        </div>
+
+        <div class="info-box bottom-right">
+            KERNEL: P-MODEL_v3.0<br>
+            ID: TYPE-02_PROTO
+        </div>
+
         <div class="reticle"></div>
     </div>
 
     <script>
-        const video = document.getElementById('camera-view');
         const timerElement = document.getElementById('timer');
         const clockElement = document.getElementById('clock');
+        const latElement = document.getElementById('lat');
+        const lonElement = document.getElementById('lon');
+        const locStatus = document.getElementById('loc-status');
         const powerStatus = document.getElementById('power-status');
-        const hudOverlay = document.getElementById('hud-overlay');
 
         let startTime = Date.now();
+        let modeIndex = 0;
+        const modes = [
+            { label: "STATUS: STABLE", color: "#adff2f" },
+            { label: "STATUS: OVERDRIVE", color: "#00ffff" },
+            { label: "STATUS: DANGER", color: "#ff0000" }
+        ];
 
-        // 1. カメラ起動
-        async function startCamera() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: "environment" },
-                    audio: false
-                });
-                video.srcObject = stream;
-            } catch (err) {
-                alert("カメラの起動に失敗しました。HTTPS接続を確認してください。");
-            }
-        }
-
-        // 2. 時計とカウントアップの更新
-        function updateTime() {
-            const now = new Date();
-            clockElement.innerText = now.toTimeString().split(' ')[0];
-
-            // 経過時間計算
-            const elapsed = Math.floor((Date.now() - startTime) / 1000);
-            const h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
-            const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
-            const s = String(elapsed % 60).padStart(2, '0');
-            timerElement.innerText = `${h}:${m}:${s}`;
-        }
-
-        // 3. パワー（充電）状態の監視
-        async function watchPower() {
-            if ('getBattery' in navigator) {
-                const battery = await navigator.getBattery();
-                
-                const updateUI = () => {
-                    if (battery.charging) {
-                        // 充電中：緑
-                        document.documentElement.style.setProperty('--hud-color', '#00ff00');
-                        powerStatus.innerText = "STATUS: EXTERNAL POWER";
-                    } else {
-                        // バッテリー：赤
-                        document.documentElement.style.setProperty('--hud-color', '#ff0000');
-                        powerStatus.innerText = "STATUS: INTERNAL BATT";
-                    }
-                };
-
-                updateUI();
-                battery.addEventListener('chargingchange', updateUI);
+        // 1. 位置情報の取得
+        function startGps() {
+            if ("geolocation" in navigator) {
+                navigator.geolocation.watchPosition((position) => {
+                    latElement.innerText = position.coords.latitude.toFixed(4);
+                    lonElement.innerText = position.coords.longitude.toFixed(4);
+                    locStatus.innerText = "SIGNAL: LOCKED";
+                }, (err) => {
+                    locStatus.innerText = "SIGNAL: LOST";
+                }, { enableHighAccuracy: true });
             } else {
-                // バッテリーAPI非対応（iPhoneの通常ブラウザ等）
-                powerStatus.innerText = "STATUS: UNKNOWN";
+                locStatus.innerText = "GPS NOT SUPPORTED";
             }
         }
 
-        setInterval(updateTime, 1000);
-        startCamera();
-        watchPower();
+        // 2. モード切替（タップ）
+        document.body.addEventListener('click', () => {
+            modeIndex = (modeIndex + 1) % modes.length;
+            document.documentElement.style.setProperty('--hud-color', modes[modeIndex].color);
+            powerStatus.innerText = modes[modeIndex].label;
+        });
+
+        // 3. カメラと時間更新
+        async function init() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                document.getElementById('camera-view').srcObject = stream;
+            } catch (err) { alert("カメラエラー"); }
+            
+            setInterval(() => {
+                const now = new Date();
+                clockElement.innerText = now.toTimeString().split(' ')[0];
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
+                const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
+                const s = String(elapsed % 60).padStart(2, '0');
+                timerElement.innerText = `${h}:${m}:${s}`;
+            }, 1000);
+            
+            startGps();
+        }
+
+        init();
     </script>
 </body>
 </html>
