@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>TYPE-02 PROTO OS</title>
+    <style>
+        /* 全体設定：漆黒と緑のHUDカラー */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            overflow: hidden;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        /* 背面カメラの映像表示 */
+        #camera-view {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* 画面いっぱいに表示 */
+            z-index: 1;
+        }
+
+        /* HUDオーバーレイレイヤー */
+        #hud-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            color: #00ff00; /* Hirasawa/P-MODEL的なグリーン */
+            text-shadow: 0 0 5px #00ff00;
+            pointer-events: none; /* 下のカメラ映像を邪魔しない */
+        }
+
+        /* 右上の時計とバッテリー */
+        .status-bar {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            text-align: right;
+            font-size: 18px;
+            letter-spacing: 2px;
+        }
+
+        /* 画面中央のレティクル（照準） */
+        .reticle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 100px;
+            border: 1px solid rgba(0, 255, 0, 0.5);
+            border-radius: 50%;
+        }
+
+        .reticle::before, .reticle::after {
+            content: '';
+            position: absolute;
+            background-color: rgba(0, 255, 0, 0.5);
+        }
+
+        .reticle::before { top: 50%; left: -10px; width: 20px; height: 1px; }
+        .reticle::after { left: 50%; top: -10px; width: 1px; height: 20px; }
+    </style>
+</head>
+<body>
+
+    <video id="camera-view" autoplay playsinline muted></video>
+
+    <div id="hud-overlay">
+        <div class="status-bar">
+            <div id="clock">00:00:00</div>
+            <div id="battery">BATT: ---%</div>
+        </div>
+        <div class="reticle"></div>
+    </div>
+
+    <script>
+        const video = document.getElementById('camera-view');
+        const clockElement = document.getElementById('clock');
+        const batteryElement = document.getElementById('battery');
+
+        // 1. カメラの起動（iPhone用の制約設定）
+        async function startCamera() {
+            const constraints = {
+                video: {
+                    facingMode: "environment", // 背面カメラを指定
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                },
+                audio: false
+            };
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+            } catch (err) {
+                console.error("Camera Error: ", err);
+                alert("カメラの起動に失敗しました。HTTPS接続か確認してください。");
+            }
+        }
+
+        // 2. 時計の更新
+        function updateClock() {
+            const now = new Date();
+            clockElement.innerText = now.toTimeString().split(' ')[0];
+        }
+
+        // 3. バッテリー情報の取得
+        async function updateBattery() {
+            if ('getBattery' in navigator) {
+                const battery = await navigator.getBattery();
+                const level = Math.floor(battery.level * 100);
+                batteryElement.innerText = `BATT: ${level}%`;
+                
+                battery.addEventListener('levelchange', () => {
+                    batteryElement.innerText = `BATT: ${Math.floor(battery.level * 100)}%`;
+                });
+            }
+        }
+
+        // 初期化
+        setInterval(updateClock, 1000);
+        updateBattery();
+        startCamera();
+    </script>
+</body>
+</html>
