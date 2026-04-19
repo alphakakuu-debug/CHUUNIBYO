@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>TYPE-02 PROTO OS v3</title>
+    <title>TYPE-02 PROTO OS - TACTICAL</title>
     <style>
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
@@ -16,32 +16,27 @@
             object-fit: cover; z-index: 1;
         }
 
-        :root { --hud-color: #adff2f; /* 黄緑をデフォルトに設定 */ }
+        :root {
+            --hud-color: #ff0000; /* 初期は赤 */
+        }
 
         #hud-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             z-index: 2; color: var(--hud-color);
-            text-shadow: 0 0 5px var(--hud-color);
+            text-shadow: 0 0 8px var(--hud-color);
             pointer-events: none;
-            border: 10px solid var(--hud-color);
+            border: 8px solid var(--hud-color); /* 枠を少し細くして視界を確保 */
             box-sizing: border-box;
-            transition: all 0.5s ease;
+            transition: all 0.4s ease-in-out;
         }
 
-        /* 四隅の情報配置 */
-        .info-box { position: absolute; font-size: 14px; line-height: 1.4; }
-        .top-left { top: 25px; left: 25px; }
-        .top-right { top: 25px; right: 25px; text-align: right; }
-        .bottom-left { bottom: 25px; left: 25px; }
-        .bottom-right { bottom: 25px; right: 25px; text-align: right; }
+        .info-box { position: absolute; font-size: 14px; line-height: 1.4; font-weight: bold; }
+        .top-left { top: 30px; left: 30px; }
+        .top-right { top: 30px; right: 30px; text-align: right; }
+        .bottom-left { bottom: 30px; left: 30px; }
+        .bottom-right { bottom: 30px; right: 30px; text-align: right; }
 
-        .reticle {
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 150px; height: 150px;
-            border: 1px solid var(--hud-color); border-radius: 50%;
-            opacity: 0.5;
-        }
+        /* 照準（reticle）のスタイルを削除しました */
     </style>
 </head>
 <body>
@@ -51,26 +46,24 @@
     <div id="hud-overlay">
         <div class="info-box top-left">
             OP_TIME: <span id="timer">00:00:00</span><br>
-            SIGNAL: <span id="signal">ENCRYPTED</span>
+            NET: ENCRYPTED
         </div>
 
         <div class="info-box top-right">
-            <div id="power-status">STATUS: STABLE</div>
+            <div id="system-status">STATUS: INITIALIZING...</div>
             <div id="clock">00:00:00</div>
         </div>
 
         <div class="info-box bottom-left">
             LAT: <span id="lat">---.----</span><br>
             LON: <span id="lon">---.----</span><br>
-            LOC: <span id="loc-status">ACQUIRING...</span>
+            GPS: <span id="gps-status">NO SIGNAL</span>
         </div>
 
         <div class="info-box bottom-right">
-            KERNEL: P-MODEL_v3.0<br>
-            ID: TYPE-02_PROTO
+            UNIT: TYPE-02 PROTO<br>
+            OS: KERNEL_P-MODEL_v3.0
         </div>
-
-        <div class="reticle"></div>
     </div>
 
     <script>
@@ -78,60 +71,57 @@
         const clockElement = document.getElementById('clock');
         const latElement = document.getElementById('lat');
         const lonElement = document.getElementById('lon');
-        const locStatus = document.getElementById('loc-status');
-        const powerStatus = document.getElementById('power-status');
+        const gpsStatus = document.getElementById('gps-status');
+        const systemStatus = document.getElementById('system-status');
+        const video = document.getElementById('camera-view');
 
         let startTime = Date.now();
-        let modeIndex = 0;
-        const modes = [
-            { label: "STATUS: STABLE", color: "#adff2f" },
-            { label: "STATUS: OVERDRIVE", color: "#00ffff" },
-            { label: "STATUS: DANGER", color: "#ff0000" }
-        ];
 
-        // 1. 位置情報の取得
-        function startGps() {
+        function startTracking() {
             if ("geolocation" in navigator) {
-                navigator.geolocation.watchPosition((position) => {
-                    latElement.innerText = position.coords.latitude.toFixed(4);
-                    lonElement.innerText = position.coords.longitude.toFixed(4);
-                    locStatus.innerText = "SIGNAL: LOCKED";
-                }, (err) => {
-                    locStatus.innerText = "SIGNAL: LOST";
-                }, { enableHighAccuracy: true });
-            } else {
-                locStatus.innerText = "GPS NOT SUPPORTED";
+                navigator.geolocation.watchPosition(
+                    (pos) => {
+                        latElement.innerText = pos.coords.latitude.toFixed(4);
+                        lonElement.innerText = pos.coords.longitude.toFixed(4);
+                        gpsStatus.innerText = "LOCKED";
+                        systemStatus.innerText = "STATUS: STABLE";
+                        document.documentElement.style.setProperty('--hud-color', "#adff2f");
+                    },
+                    (err) => {
+                        gpsStatus.innerText = "LOST";
+                        systemStatus.innerText = "STATUS: DANGER";
+                        document.documentElement.style.setProperty('--hud-color', "#ff0000");
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
             }
         }
 
-        // 2. モード切替（タップ）
-        document.body.addEventListener('click', () => {
-            modeIndex = (modeIndex + 1) % modes.length;
-            document.documentElement.style.setProperty('--hud-color', modes[modeIndex].color);
-            powerStatus.innerText = modes[modeIndex].label;
-        });
-
-        // 3. カメラと時間更新
-        async function init() {
+        async function startCamera() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-                document.getElementById('camera-view').srcObject = stream;
-            } catch (err) { alert("カメラエラー"); }
-            
-            setInterval(() => {
-                const now = new Date();
-                clockElement.innerText = now.toTimeString().split(' ')[0];
-                const elapsed = Math.floor((Date.now() - startTime) / 1000);
-                const h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
-                const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
-                const s = String(elapsed % 60).padStart(2, '0');
-                timerElement.innerText = `${h}:${m}:${s}`;
-            }, 1000);
-            
-            startGps();
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: "environment" },
+                    audio: false
+                });
+                video.srcObject = stream;
+            } catch (err) {
+                systemStatus.innerText = "STATUS: CAM_ERROR";
+            }
         }
 
-        init();
+        function updateTime() {
+            const now = new Date();
+            clockElement.innerText = now.toTimeString().split(' ')[0];
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
+            const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
+            const s = String(elapsed % 60).padStart(2, '0');
+            timerElement.innerText = `${h}:${m}:${s}`;
+        }
+
+        setInterval(updateTime, 1000);
+        startCamera();
+        startTracking();
     </script>
 </body>
 </html>
