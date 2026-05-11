@@ -2,125 +2,177 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Utiler TYPE-PROTO OS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>UtilityOS TYPE-PROTO V2</title>
     <style>
-        body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            background-color: #000; overflow: hidden;
-            font-family: 'Courier New', Courier, monospace;
-        }
-
-        #camera-view {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            object-fit: cover; z-index: 1;
-        }
-
         :root {
-            --hud-color: #ff0000; /* 初期：警告赤 */
+            --util-cyan: #00f2ff;
+            --util-red: #ff004c;
+            --bg-black: #050505;
+            /* 視野中央集約用のマージン（1.5キューブ分に相当） */
+            --safe-area: 15%;
         }
 
-        #hud-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 2; color: var(--hud-color);
-            text-shadow: 0 0 8px var(--hud-color);
-            pointer-events: none;
-            border: 8px solid var(--hud-color);
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-black);
+            color: var(--util-cyan);
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            -webkit-user-select: none;
+        }
+
+        /* 至近距離視覚ガイド（5.7cm用） */
+        #viewport {
+            width: 100%;
+            height: 100%;
+            padding: var(--safe-area);
             box-sizing: border-box;
-            transition: all 0.5s ease-in-out;
+            border: 1px solid rgba(0, 242, 255, 0.1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
-        .info-box { position: absolute; font-size: 14px; line-height: 1.4; font-weight: bold; }
-        .top-left { top: 30px; left: 30px; }
-        .top-right { top: 30px; right: 30px; text-align: right; }
-        .bottom-left { bottom: 30px; left: 30px; }
-        .bottom-right { bottom: 30px; right: 30px; text-align: right; }
+        /* ステータスバー */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            letter-spacing: 2px;
+            border-bottom: 1px solid var(--util-cyan);
+            padding-bottom: 5px;
+        }
+
+        /* 中央メインインターフェース */
+        .main-display {
+            text-align: center;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .status-orbit {
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 0 10px var(--util-cyan);
+            animation: pulse 2s infinite;
+        }
+
+        /* EarPods マイク入力波形（シミュレーション） */
+        .audio-monitor {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+        }
+
+        .bar {
+            width: 3px;
+            background-color: var(--util-cyan);
+            animation: audio-low 0.5s infinite alternate;
+        }
+
+        /* 下部ナビゲーション（頭の動きで操作想定） */
+        .footer {
+            border-top: 1px solid var(--util-cyan);
+            padding-top: 10px;
+            display: flex;
+            justify-content: space-around;
+            font-size: 12px;
+        }
+
+        .active-module {
+            background-color: var(--util-cyan);
+            color: var(--bg-black);
+            padding: 2px 8px;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.8; }
+            50% { opacity: 1; }
+            100% { opacity: 0.8; }
+        }
+
+        @keyframes audio-low {
+            from { height: 5px; }
+            to { height: 25px; }
+        }
+
+        /* 画面端の「虚無」を維持するためのケラレ */
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, transparent 40%, black 90%);
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
 
-    <video id="camera-view" autoplay playsinline muted></video>
-
-    <div id="hud-overlay">
-        <div class="info-box top-left">
-            RUN_TIME: <span id="timer">00:00:00</span><br>
-            MODE: LOGICAL_ACTIVE
-        </div>
-
-        <div class="info-box top-right">
-            <div id="system-status">SYS_BOOT: WAITING...</div>
+    <div id="viewport">
+        <div class="header">
             <div id="clock">00:00:00</div>
+            <div>TYPE-PROTO V2.1 / SUZUKA_MODE</div>
+            <div>PWR: 88%</div>
         </div>
 
-        <div class="info-box bottom-left">
-            LAT: <span id="lat">---.----</span><br>
-            LON: <span id="lon">---.----</span><br>
-            GPS: <span id="gps-status">SEARCHING</span>
+        <div class="main-display">
+            <div class="status-orbit">UTILER ACTIVE</div>
+            <div class="audio-monitor">
+                <div class="bar" style="animation-delay: 0.1s"></div>
+                <div class="bar" style="animation-delay: 0.3s"></div>
+                <div class="bar" style="animation-delay: 0.2s"></div>
+                <div class="bar" style="animation-delay: 0.4s"></div>
+                <div class="bar" style="animation-delay: 0.1s"></div>
+                <div class="bar" style="animation-delay: 0.5s"></div>
+                <div class="bar" style="animation-delay: 0.2s"></div>
+            </div>
+            <div style="font-size: 10px;">MIC: EARPODS_LN_ACTIVE</div>
         </div>
 
-        <div class="info-box bottom-right">
-            UNIT: Utiler TYPE-PROTO<br>
-            OS: UTILITY_KERNEL_v1.0
+        <div class="footer">
+            <div class="active-module">OS_CORE</div>
+            <div>AUDIO</div>
+            <div>SENSOR</div>
+            <div>LOG</div>
         </div>
     </div>
 
+    <div class="vignette"></div>
+
     <script>
-        const timerElement = document.getElementById('timer');
-        const clockElement = document.getElementById('clock');
-        const latElement = document.getElementById('lat');
-        const lonElement = document.getElementById('lon');
-        const gpsStatus = document.getElementById('gps-status');
-        const systemStatus = document.getElementById('system-status');
-        const video = document.getElementById('camera-view');
-
-        let startTime = Date.now();
-
-        // GPS監視
-        function startTracking() {
-            if ("geolocation" in navigator) {
-                navigator.geolocation.watchPosition(
-                    (pos) => {
-                        latElement.innerText = pos.coords.latitude.toFixed(4);
-                        lonElement.innerText = pos.coords.longitude.toFixed(4);
-                        gpsStatus.innerText = "LOCKED";
-                        systemStatus.innerText = "SYS_BOOT: STABLE";
-                        document.documentElement.style.setProperty('--hud-color', "#adff2f"); // 安定の黄緑
-                    },
-                    (err) => {
-                        gpsStatus.innerText = "LOST";
-                        systemStatus.innerText = "SYS_BOOT: DANGER";
-                        document.documentElement.style.setProperty('--hud-color', "#ff0000"); // 警告の赤
-                    },
-                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-                );
-            }
-        }
-
-        async function startCamera() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: "environment" },
-                    audio: false
-                });
-                video.srcObject = stream;
-            } catch (err) {
-                systemStatus.innerText = "SYS_BOOT: ERROR";
-            }
-        }
-
-        function updateTime() {
+        // 時計更新
+        function updateClock() {
             const now = new Date();
-            clockElement.innerText = now.toTimeString().split(' ')[0];
-            const elapsed = Math.floor((Date.now() - startTime) / 1000);
-            const h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
-            const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
-            const s = String(elapsed % 60).padStart(2, '0');
-            timerElement.innerText = `${h}:${m}:${s}`;
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('clock').innerText = `${h}:${m}:${s}`;
         }
+        setInterval(updateClock, 1000);
+        updateClock();
 
-        setInterval(updateTime, 1000);
-        startCamera();
-        startTracking();
+        // 画面タップでマイク・リアクション（シミュレーション）
+        document.body.addEventListener('click', () => {
+            const bars = document.querySelectorAll('.bar');
+            bars.forEach(bar => {
+                bar.style.height = '40px';
+                setTimeout(() => { bar.style.height = ''; }, 200);
+            });
+        });
     </script>
 </body>
 </html>
