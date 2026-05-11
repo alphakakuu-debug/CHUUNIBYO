@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>UtilityOS TYPE-PROTO V2.2</title>
+    <title>UtilityOS TYPE-PROTO V2.3</title>
     <style>
         :root {
             --util-cyan: #00f2ff;
-            --util-red: #ff004c;
-            --bg-black: rgba(0, 0, 0, 0.6);
+            --bg-black: rgba(0, 0, 0, 0.5);
         }
 
         body, html {
@@ -22,7 +21,7 @@
             overflow: hidden;
         }
 
-        /* 背面のカメラ映像用 */
+        /* 背面カメラ映像 */
         #camera-preview {
             position: fixed;
             top: 0;
@@ -31,10 +30,9 @@
             height: 100%;
             object-fit: cover;
             z-index: 1;
-            transform: scaleX(-1); /* フロントカメラ用（鏡合わせ） */
+            /* アウトカメラなので反転(scaleX)は無し */
         }
 
-        /* UIレイヤー */
         #ui-layer {
             position: relative;
             z-index: 10;
@@ -43,141 +41,128 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 15px;
+            padding: 20px;
             box-sizing: border-box;
-            background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.4) 100%);
         }
 
         .section {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
         }
 
         .block {
             background: var(--bg-black);
-            border: 1px solid var(--util-cyan);
-            padding: 8px;
-            font-size: 10px;
-            backdrop-filter: blur(2px);
+            border-left: 3px solid var(--util-cyan);
+            padding: 10px;
+            font-size: 11px;
+            letter-spacing: 1px;
         }
 
         .title {
-            font-weight: bold;
-            border-bottom: 1px solid var(--util-cyan);
-            margin-bottom: 5px;
+            font-size: 9px;
+            color: rgba(0, 242, 255, 0.7);
+            margin-bottom: 4px;
             display: block;
         }
 
-        /* 中央のレティクル（照準） */
+        /* 照準 */
         #reticle {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 100px;
-            height: 100px;
-            border: 1px solid rgba(0, 242, 255, 0.3);
-            border-radius: 50%;
+            width: 160px;
+            height: 160px;
+            border: 1px solid rgba(0, 242, 255, 0.2);
+            border-radius: 2px;
             pointer-events: none;
         }
 
-        #reticle::before, #reticle::after {
-            content: '';
+        #reticle::before {
+            content: 'TARGETING_AUTO';
             position: absolute;
-            background: var(--util-cyan);
+            top: -15px;
+            left: 0;
+            font-size: 9px;
         }
 
-        /* 十字線 */
-        #reticle::before { top: 50%; left: -10px; width: 120px; height: 1px; }
-        #reticle::after { left: 50%; top: -10px; width: 1px; height: 120px; }
-
-        .glitch {
-            animation: glitch-anim 3s infinite;
+        /* スキャンエフェクト */
+        .scan-line {
+            position: fixed;
+            width: 100%;
+            height: 2px;
+            background: rgba(0, 242, 255, 0.1);
+            top: 0;
+            animation: scan 4s linear infinite;
+            z-index: 5;
         }
 
-        @keyframes glitch-anim {
-            0% { opacity: 1; }
-            95% { opacity: 1; transform: scale(1); }
-            96% { opacity: 0.8; transform: scale(1.02); }
-            100% { opacity: 1; }
+        @keyframes scan {
+            0% { top: 0; }
+            100% { top: 100%; }
         }
     </style>
 </head>
 <body>
 
-    <!-- カメラ背景 -->
     <video id="camera-preview" autoplay playsinline></video>
+    <div class="scan-line"></div>
 
     <div id="ui-layer">
-        <!-- 上部：ステータスと時計 -->
         <div class="section">
-            <div class="block glitch">
-                <span class="title">SYSTEM STATUS</span>
-                ID: TYPE-PROTO_01<br>
-                LOC: SUZUKA_JP<br>
-                MODE: SCANNING...
+            <div class="block">
+                <span class="title">SYSTEM_LOG</span>
+                KERNEL: ACTIVE<br>
+                LINK: EARPODS_CONNECTED<br>
+                OS: UtilityOS_v2.3
             </div>
             <div class="block">
-                <span class="title">CHRONO</span>
-                <div id="clock" style="font-size: 16px;">00:00:00</div>
-                2026-05-12
+                <span class="title">TIMESTAMP</span>
+                <div id="clock" style="font-size: 18px;">00:00:00</div>
+                SUZUKA_PROJECT_2026
             </div>
         </div>
 
-        <!-- 中央：レティクル -->
         <div id="reticle"></div>
 
-        <!-- 下部：位置情報とデバイス情報 -->
         <div class="section">
             <div class="block">
-                <span class="title">GEOLOCATION</span>
-                LAT: <span id="lat">---.---</span><br>
-                LON: <span id="lon">---.---</span><br>
+                <span class="title">GEOLOCATION_DATA</span>
+                LAT: <span id="lat">---.----</span><br>
+                LON: <span id="lon">---.----</span><br>
                 ALT: <span id="alt">---</span>m
             </div>
-            <div class="block" style="text-align: right;">
-                <span class="title">DEVICE_PERF</span>
-                BATT: <span id="batt">--</span>%<br>
-                TEMP: NOMINAL<br>
-                FPS: 60.0
+            <div class="block" style="text-align: right; border-left: none; border-right: 3px solid var(--util-cyan);">
+                <span class="title">ENVIRONMENT</span>
+                VISUAL: ENABLED<br>
+                LIGHT: 100%_MASKED<br>
+                HUD: STABLE
             </div>
         </div>
     </div>
 
     <script>
-        // カメラ起動
         async function initCamera() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+                // 'environment' でアウトカメラを指定
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' }, 
+                    audio: false 
+                });
                 document.getElementById('camera-preview').srcObject = stream;
             } catch (err) {
                 console.error("Camera Error: ", err);
             }
         }
 
-        // 位置情報取得
         function updateLocation() {
             navigator.geolocation.watchPosition(pos => {
                 document.getElementById('lat').innerText = pos.coords.latitude.toFixed(4);
                 document.getElementById('lon').innerText = pos.coords.longitude.toFixed(4);
                 document.getElementById('alt').innerText = pos.coords.altitude ? pos.coords.altitude.toFixed(1) : '0.0';
-            }, err => console.log(err), { enableHighAccuracy: true });
+            }, null, { enableHighAccuracy: true });
         }
 
-        // バッテリー情報
-        async function updateBattery() {
-            if (navigator.getBattery) {
-                const battery = await navigator.getBattery();
-                const update = () => {
-                    document.getElementById('batt').innerText = Math.floor(battery.level * 100);
-                };
-                battery.addEventListener('levelchange', update);
-                update();
-            }
-        }
-
-        // 時計
         function updateClock() {
             const now = new Date();
             document.getElementById('clock').innerText = now.toTimeString().split(' ')[0];
@@ -187,7 +172,6 @@
         updateClock();
         initCamera();
         updateLocation();
-        updateBattery();
     </script>
 </body>
 </html>
