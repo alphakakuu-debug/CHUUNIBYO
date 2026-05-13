@@ -22,13 +22,9 @@
             transition: box-shadow 0.2s ease;
         }
 
-        /* 背面カメラ映像 */
         #camera-preview {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             object-fit: cover;
             z-index: 1;
         }
@@ -36,20 +32,16 @@
         #ui-layer {
             position: relative;
             z-index: 10;
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             padding: 20px;
             box-sizing: border-box;
-            pointer-events: none; /* UI越しに背後をタップ可能に */
+            pointer-events: none;
         }
 
-        .section {
-            display: flex;
-            justify-content: space-between;
-        }
+        .section { display: flex; justify-content: space-between; }
 
         .block {
             background: var(--bg-black);
@@ -67,14 +59,11 @@
             display: block;
         }
 
-        /* 照準 */
         #reticle {
             position: fixed;
-            top: 50%;
-            left: 50%;
+            top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 160px;
-            height: 160px;
+            width: 160px; height: 160px;
             border: 1px solid rgba(0, 242, 255, 0.2);
             border-radius: 2px;
             pointer-events: none;
@@ -83,16 +72,13 @@
         #reticle::before {
             content: 'TARGETING_AUTO';
             position: absolute;
-            top: -15px;
-            left: 0;
+            top: -15px; left: 0;
             font-size: 9px;
         }
 
-        /* スキャンエフェクト */
         .scan-line {
             position: fixed;
-            width: 100%;
-            height: 2px;
+            width: 100%; height: 2px;
             background: rgba(0, 242, 255, 0.1);
             top: 0;
             animation: scan 4s linear infinite;
@@ -100,12 +86,8 @@
             pointer-events: none;
         }
 
-        @keyframes scan {
-            0% { top: 0; }
-            100% { top: 100%; }
-        }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
 
-        /* タップを促すオーバーレイ */
         #boot-screen {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -161,22 +143,26 @@
 
     <script>
         let audioContext;
-        let analyser;
         let isBooted = false;
 
-        // システム一括起動
-        function bootSystem() {
+        async function bootSystem() {
             if (isBooted) return;
             isBooted = true;
+            
             document.getElementById('boot-screen').style.display = 'none';
             document.getElementById('system-status-text').innerText = "KERNEL: ACTIVE";
-            
+
+            // AudioContextの作成と再開（iOS対策）
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioContext.state === 'suspended') {
+                await audioContext.resume();
+            }
+
             initCamera();
             initSoundMonitor();
             updateLocation();
         }
 
-        // カメラ起動
         async function initCamera() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -184,26 +170,22 @@
                     audio: false 
                 });
                 document.getElementById('camera-preview').srcObject = stream;
-            } catch (err) {
-                console.error("Camera Error: ", err);
-            }
+            } catch (err) { console.error("Camera Error: ", err); }
         }
 
-        // サウンドモニター// サウンドモニター（透過モード有効版）
         async function initSoundMonitor() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                analyser = audioContext.createAnalyser();
+                const analyser = audioContext.createAnalyser();
                 const microphone = audioContext.createMediaStreamSource(stream);
                 const javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
 
                 analyser.fftSize = 1024;
 
-                // --- ここが重要：マイクの音をスピーカー(EarPods)に接続 ---
-                // これにより、マイクが拾った音がそのまま耳に届きます
-                microphone.connect(audioContext.destination); 
+                // 透過モード：マイクをスピーカーに直結
+                microphone.connect(audioContext.destination);
 
+                // モニター用：解析ノードに接続
                 microphone.connect(analyser);
                 analyser.connect(javascriptNode);
                 javascriptNode.connect(audioContext.destination);
@@ -216,18 +198,15 @@
                     const average = values / array.length;
                     updateMonitorUI(average);
                 };
-            } catch (err) {
-                console.error("MIC_ERROR:", err);
-            }
+            } catch (err) { console.error("MIC_ERROR:", err); }
         }
+
         function updateMonitorUI(volume) {
             const threshold = 40; 
             const statusElement = document.getElementById('system-status-text');
-            
             if (volume > threshold) {
                 document.body.style.boxShadow = "inset 0 0 100px rgba(255, 0, 0, 0.8)";
                 statusElement.innerText = "!! EXTERNAL CONTACT DETECTED !!";
-                
                 setTimeout(() => {
                     document.body.style.boxShadow = "none";
                     statusElement.innerText = "SYSTEM: STEALTH_MODE";
