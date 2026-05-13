@@ -101,6 +101,70 @@
             0% { top: 0; }
             100% { top: 100%; }
         }
+
+        // --- 常時モニター・エンジン ---
+let audioContext;
+let analyser;
+let microphone;
+let javascriptNode;
+
+async function initSoundMonitor() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioContext.createAnalyser();
+        microphone = audioContext.createMediaStreamSource(stream);
+        javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
+
+        analyser.smoothingTimeConstant = 0.3;
+        analyser.fftSize = 1024;
+
+        microphone.connect(analyser);
+        analyser.connect(javascriptNode);
+        javascriptNode.connect(audioContext.destination);
+
+        javascriptNode.onaudioprocess = function() {
+            const array = new Uint8Array(analyser.frequencyBinCount);
+            analyser.getByteFrequencyData(array);
+            let values = 0;
+
+            for (let i = 0; i < array.length; i++) {
+                values += array[i];
+            }
+
+            const average = values / array.length;
+            updateMonitorUI(average);
+        };
+    } catch (err) {
+        console.error("MIC_ERROR:", err);
+    }
+}
+
+// 親フラ検知・UI反映
+function updateMonitorUI(volume) {
+    const threshold = 40; // ★ここを調整してノックに反応する感度を決める
+    const statusElement = document.getElementById('system-status-text'); // 既存のステータス表示部
+    
+    if (volume > threshold) {
+        // 警告：画面全体を薄く赤くフラッシュさせる
+        document.body.style.boxShadow = "inset 0 0 100px rgba(255, 0, 0, 0.8)";
+        if(statusElement) statusElement.innerText = "!! EXTERNAL CONTACT DETECTED !!";
+        
+        // 1秒後に戻す
+        setTimeout(() => {
+            document.body.style.boxShadow = "none";
+            if(statusElement) statusElement.innerText = "SYSTEM: STEALH_MODE";
+        }, 1000);
+    }
+}
+
+// 画面タップでモニター開始（ブラウザの制限対策）
+document.body.addEventListener('click', () => {
+    if (!audioContext) {
+        initSoundMonitor();
+        console.log("MONITORING_SYSTEM: ONLINE");
+    }
+        });
     </style>
 </head>
 <body>
