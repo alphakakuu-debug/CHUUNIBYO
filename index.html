@@ -189,7 +189,7 @@
             }
         }
 
-        // サウンドモニター
+        // サウンドモニター// サウンドモニター（透過モード有効版）
         async function initSoundMonitor() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -198,8 +198,11 @@
                 const microphone = audioContext.createMediaStreamSource(stream);
                 const javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
 
-                analyser.smoothingTimeConstant = 0.3;
                 analyser.fftSize = 1024;
+
+                // --- ここが重要：マイクの音をスピーカー(EarPods)に接続 ---
+                // これにより、マイクが拾った音がそのまま耳に届きます
+                microphone.connect(audioContext.destination); 
 
                 microphone.connect(analyser);
                 analyser.connect(javascriptNode);
@@ -217,7 +220,6 @@
                 console.error("MIC_ERROR:", err);
             }
         }
-
         function updateMonitorUI(volume) {
             const threshold = 40; 
             const statusElement = document.getElementById('system-status-text');
