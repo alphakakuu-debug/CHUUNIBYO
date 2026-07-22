@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>UtilityOS TYPE-PROTO V2.5</title>
+    <title>UtilityOS TYPE-PROTO V2.5.1</title>
     <style>
         :root {
             --util-cyan: #00f2ff;
@@ -114,7 +114,7 @@
                 <span class="title">SYSTEM_LOG</span>
                 <span id="system-status-text">KERNEL: STANDBY</span><br>
                 LINK: EARPODS_CONNECTED<br>
-                OS: UtilityOS_v2.5
+                OS: UtilityOS_v2.5.1
             </div>
             <div class="block">
                 <span class="title">TIMESTAMP</span>
@@ -132,7 +132,6 @@
                 LON: <span id="lon">---.----</span><br>
                 ALT: <span id="alt">---</span>m
             </div>
-            <!-- ENVIRONMENTブロックに外気温表示を追加 -->
             <div class="block" style="text-align: right; border-left: none; border-right: 3px solid var(--util-cyan);">
                 <span class="title">ENVIRONMENT</span>
                 TEMP: <span id="ext-temp" style="font-weight: bold; color: #fff;">--.-</span>°C<br>
@@ -147,8 +146,11 @@
         let audioContext;
         let isBooted = false;
 
-        // ★ここに OpenWeatherMap で取得した APIキー を入力してください
+        // ★ここに OpenWeatherMap の APIキー を入力をしてください
         const API_KEY = "d465f54b761e798103a827b981556cc7";
+
+        // 前回気温を取得した時間を記録する変数
+        let lastTempFetchTime = 0;
 
         async function bootSystem() {
             if (isBooted) return;
@@ -157,7 +159,6 @@
             document.getElementById('boot-screen').style.display = 'none';
             document.getElementById('system-status-text').innerText = "KERNEL: ACTIVE";
 
-            // AudioContextの作成と再開（iOS対策）
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
             if (audioContext.state === 'suspended') {
                 await audioContext.resume();
@@ -187,10 +188,7 @@
 
                 analyser.fftSize = 1024;
 
-                // 透過モード：マイクをスピーカーに直結
                 microphone.connect(audioContext.destination);
-
-                // モニター用：解析ノードに接続
                 microphone.connect(analyser);
                 analyser.connect(javascriptNode);
                 javascriptNode.connect(audioContext.destination);
@@ -228,14 +226,17 @@
                 document.getElementById('lon').innerText = lon.toFixed(4);
                 document.getElementById('alt').innerText = pos.coords.altitude ? pos.coords.altitude.toFixed(1) : '0.0';
 
-                // 位置情報が取得できたら気温を取得（1回または定期的に）
-                fetchTemperature(lat, lon);
+                // ★1分（60,000ミリ秒）以上経過していたら API で気温を取得
+                const now = Date.now();
+                if (now - lastTempFetchTime > 60000) { 
+                    fetchTemperature(lat, lon);
+                    lastTempFetchTime = now;
+                }
             }, null, { enableHighAccuracy: true });
         }
 
-        // 外気温を取得する関数
         function fetchTemperature(lat, lon) {
-            if (API_KEY === "YOUR_API_KEY_HERE") return; // Key未設定時はスキップ
+            if (API_KEY === "YOUR_API_KEY_HERE") return;
 
             const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}`;
 
