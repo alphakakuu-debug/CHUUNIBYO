@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>UtilityOS TYPE-PROTO V2.4</title>
+    <title>UtilityOS TYPE-PROTO V2.5</title>
     <style>
         :root {
             --util-cyan: #00f2ff;
@@ -114,7 +114,7 @@
                 <span class="title">SYSTEM_LOG</span>
                 <span id="system-status-text">KERNEL: STANDBY</span><br>
                 LINK: EARPODS_CONNECTED<br>
-                OS: UtilityOS_v2.4
+                OS: UtilityOS_v2.5
             </div>
             <div class="block">
                 <span class="title">TIMESTAMP</span>
@@ -132,8 +132,10 @@
                 LON: <span id="lon">---.----</span><br>
                 ALT: <span id="alt">---</span>m
             </div>
+            <!-- ENVIRONMENTブロックに外気温表示を追加 -->
             <div class="block" style="text-align: right; border-left: none; border-right: 3px solid var(--util-cyan);">
                 <span class="title">ENVIRONMENT</span>
+                TEMP: <span id="ext-temp" style="font-weight: bold; color: #fff;">--.-</span>°C<br>
                 VISUAL: ENABLED<br>
                 LIGHT: 100%_MASKED<br>
                 HUD: STABLE
@@ -144,6 +146,9 @@
     <script>
         let audioContext;
         let isBooted = false;
+
+        // ★ここに OpenWeatherMap で取得した APIキー を入力してください
+        const API_KEY = "d465f54b761e798103a827b981556cc7";
 
         async function bootSystem() {
             if (isBooted) return;
@@ -216,10 +221,32 @@
 
         function updateLocation() {
             navigator.geolocation.watchPosition(pos => {
-                document.getElementById('lat').innerText = pos.coords.latitude.toFixed(4);
-                document.getElementById('lon').innerText = pos.coords.longitude.toFixed(4);
+                const lat = pos.coords.latitude;
+                const lon = pos.coords.longitude;
+
+                document.getElementById('lat').innerText = lat.toFixed(4);
+                document.getElementById('lon').innerText = lon.toFixed(4);
                 document.getElementById('alt').innerText = pos.coords.altitude ? pos.coords.altitude.toFixed(1) : '0.0';
+
+                // 位置情報が取得できたら気温を取得（1回または定期的に）
+                fetchTemperature(lat, lon);
             }, null, { enableHighAccuracy: true });
+        }
+
+        // 外気温を取得する関数
+        function fetchTemperature(lat, lon) {
+            if (API_KEY === "YOUR_API_KEY_HERE") return; // Key未設定時はスキップ
+
+            const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.main && data.main.temp !== undefined) {
+                        document.getElementById('ext-temp').innerText = data.main.temp.toFixed(1);
+                    }
+                })
+                .catch(err => console.error("Temp API Error:", err));
         }
 
         function updateClock() {
