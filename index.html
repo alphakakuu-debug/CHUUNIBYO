@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>UtilityOS TYPE-PROTO V4.1.0</title>
+    <title>UtilityOS TYPE-PROTO V4.2.1</title>
     <style>
         :root {
             --util-cyan: #00f2ff;
@@ -19,7 +19,6 @@
             color: var(--util-cyan);
             font-family: 'Courier New', Courier, monospace;
             overflow: hidden;
-            transition: box-shadow 0.2s ease;
         }
 
         #camera-preview {
@@ -60,21 +59,11 @@
             display: block;
         }
 
-        /* 左上集約ブロックのカスタマイズ */
         #top-left-block {
             min-width: 200px;
             max-width: 230px;
         }
 
-        #speed-val {
-            font-size: 22px;
-            font-weight: bold;
-            color: #fff;
-            line-height: 1.1;
-            margin-bottom: 6px;
-        }
-
-        /* 波形キャンバス */
         #waveform-canvas {
             width: 100%;
             height: 28px;
@@ -83,7 +72,6 @@
             margin-bottom: 6px;
         }
 
-        /* ログ表示用 */
         #memo-logs {
             font-size: 9px;
             color: #fff;
@@ -92,7 +80,6 @@
             line-height: 1.3;
         }
 
-        /* 中央の静的クロスヘア */
         #crosshair {
             position: fixed;
             top: 50%; left: 50%;
@@ -123,22 +110,29 @@
             letter-spacing: 2px;
         }
 
-        .voice-active { color: #fff; font-weight: bold; background: rgba(0,242,255,0.3); padding: 2px 4px; }
+        .voice-active { 
+            color: #fff; 
+            font-weight: bold; 
+            background: rgba(0,242,255,0.3); 
+            padding: 2px 4px; 
+            display: inline-block;
+            margin-bottom: 6px;
+            word-break: break-all;
+        }
     </style>
 </head>
 <body onclick="bootSystem()">
 
-    <div id="boot-screen">TOUCH TO INITIALIZE UtilityOS V4.1.0</div>
+    <div id="boot-screen">TOUCH TO INITIALIZE UtilityOS V4.2.1</div>
 
     <video id="camera-preview" autoplay playsinline></video>
     <div id="crosshair"></div>
 
     <div id="ui-layer">
-        <!-- 上部ヘッダー（左側に 速度・波形・音声ログ を集約） -->
         <div class="section">
             <div class="block" id="top-left-block">
-                <span class="title">SPEED (VELOCITY)</span>
-                <div id="speed-val">0.0 <span style="font-size: 11px; font-weight: normal; color: var(--util-cyan);">km/h</span></div>
+                <span class="title">VOICE_INPUT_MONITOR</span>
+                <span id="voice-cmd" class="voice-active">LISTENING...</span>
 
                 <span class="title">AUDIO WAVEFORM</span>
                 <canvas id="waveform-canvas"></canvas>
@@ -156,15 +150,6 @@
             </div>
         </div>
 
-        <!-- 中央：音声認識状態表示 -->
-        <div class="section" style="justify-content: center;">
-            <div class="block" style="text-align: center; min-width: 240px;">
-                <span class="title">VOICE_INPUT_MONITOR</span>
-                <span id="voice-cmd" class="voice-active">LISTENING...</span>
-            </div>
-        </div>
-
-        <!-- 下部フッター -->
         <div class="section">
             <div class="block">
                 <span class="title">GPS_DATA</span>
@@ -189,7 +174,6 @@
         const API_KEY = "d465f54b761e798103a827b981556cc7";
         let lastTempFetchTime = 0;
 
-        // 音声ログ保存用
         const memoLogs = [];
 
         async function bootSystem() {
@@ -198,7 +182,10 @@
             
             document.getElementById('boot-screen').style.display = 'none';
 
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            // 【低遅延対策1】latencyHint: 'interactive' で最速モード起動
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            audioContext = new AudioCtx({ latencyHint: 'interactive' });
+            
             if (audioContext.state === 'suspended') {
                 await audioContext.resume();
             }
@@ -222,28 +209,29 @@
             } catch (err) { console.error("Camera Error: ", err); }
         }
 
-        /* 音声パススルー + 波形描画 */
+        /* 超低遅延 集音 ＆ パススルー設定 */
         async function initSoundAndAudioPass() {
             try {
+                // 【低遅延対策2】重いDSP処理（エコーキャンセル等）をOFFにして処理遅延を削る
                 const stream = await navigator.mediaDevices.getUserMedia({ 
                     audio: {
                         echoCancellation: false,
                         noiseSuppression: false,
-                        autoGainControl: true
+                        autoGainControl: false,
+                        latency: 0
                     } 
                 });
 
                 const microphone = audioContext.createMediaStreamSource(stream);
+                
+                // 【低遅延対策3】FFTサイズを32に小さくしてバッファ待ちを最小化
                 const analyser = audioContext.createAnalyser();
-                analyser.fftSize = 64;
+                analyser.fftSize = 32;
 
-                // 音声パススルー（スピーカー出力）
+                // ダイレクト出力（集音）
                 microphone.connect(audioContext.destination);
-
-                // アナライザー接続
                 microphone.connect(analyser);
 
-                // 波形描画ループ
                 drawWaveform(analyser);
 
             } catch (err) { 
@@ -251,7 +239,6 @@
             }
         }
 
-        /* 波形をキャンバスへリアルタイム描画 */
         function drawWaveform(analyser) {
             const canvas = document.getElementById('waveform-canvas');
             const ctx = canvas.getContext('2d');
@@ -276,7 +263,6 @@
             render();
         }
 
-        /* GPS情報 ＆ 速度計測 */
         function updateLocation() {
             navigator.geolocation.watchPosition(pos => {
                 const lat = pos.coords.latitude;
@@ -284,14 +270,6 @@
                 document.getElementById('lat').innerText = lat.toFixed(4);
                 document.getElementById('lon').innerText = lon.toFixed(4);
                 document.getElementById('alt').innerText = pos.coords.altitude ? pos.coords.altitude.toFixed(1) : '0.0';
-
-                // 速度計算（m/s を km/h に変換）
-                if (pos.coords.speed !== null && pos.coords.speed !== undefined) {
-                    const speedKmh = (pos.coords.speed * 3.6).toFixed(1);
-                    document.getElementById('speed-val').innerHTML = `${speedKmh} <span style="font-size: 11px; font-weight: normal; color: var(--util-cyan);">km/h</span>`;
-                } else {
-                    document.getElementById('speed-val').innerHTML = `0.0 <span style="font-size: 11px; font-weight: normal; color: var(--util-cyan);">km/h</span>`;
-                }
 
                 const now = Date.now();
                 if (now - lastTempFetchTime > 60000) { 
@@ -332,7 +310,6 @@
             document.getElementById('session-timer').innerText = `${mins}:${secs}`;
         }
 
-        /* 音声認識 ＆ ログ自動追加 */
         function initVoiceRecognition() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
@@ -350,8 +327,6 @@
                 const transcript = event.results[lastIndex][0].transcript.trim();
                 
                 document.getElementById('voice-cmd').innerText = `"${transcript}"`;
-
-                // 発言をタイムスタンプ付きでログ追加
                 addVoiceLog(transcript);
             };
 
@@ -365,7 +340,7 @@
             const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
             
             memoLogs.unshift(`[${timeStr}] ${text}`);
-            if (memoLogs.length > 3) memoLogs.pop(); // 最新3件に制限
+            if (memoLogs.length > 3) memoLogs.pop();
 
             const logsContainer = document.getElementById('memo-logs');
             logsContainer.innerHTML = memoLogs.map(log => `<div>${log}</div>`).join('');
