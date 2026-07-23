@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>UtilityOS TYPE-PROTO V2.8.0</title>
+    <title>UtilityOS TYPE-PROTO V2.8.5</title>
     <style>
         :root {
             --util-cyan: #00f2ff;
@@ -70,13 +70,6 @@
             pointer-events: none;
         }
 
-        #reticle::before {
-            content: 'TARGETING_AUTO';
-            position: absolute;
-            top: -15px; left: 0;
-            font-size: 9px;
-        }
-
         .scan-line {
             position: fixed;
             width: 100%; height: 2px;
@@ -101,21 +94,27 @@
             cursor: pointer;
         }
 
-        .yt-block {
-            border-left-color: var(--yt-red) !important;
+        .yt-block { border-left-color: var(--yt-red) !important; }
+        .voice-active { color: #00f2ff; font-weight: bold; }
+
+        /* 曲リスト表示 */
+        .playlist-box {
+            text-align: left;
+            font-size: 10px;
+            line-height: 1.4;
+            margin-top: 5px;
         }
-        .voice-active {
-            color: #00f2ff;
+        .active-track {
+            color: #fff;
             font-weight: bold;
+            background: rgba(0, 242, 255, 0.2);
         }
 
-        /* YouTubeプレイヤーを画面外に隠す設定（音声のみ抽出） */
+        /* YouTubeプレイヤーを画面外に隠す */
         #youtube-player-container {
             position: fixed;
-            top: -9999px;
-            left: -9999px;
-            width: 1px;
-            height: 1px;
+            top: -9999px; left: -9999px;
+            width: 1px; height: 1px;
             opacity: 0;
             pointer-events: none;
         }
@@ -123,12 +122,11 @@
 </head>
 <body onclick="bootSystem()">
 
-    <div id="boot-screen">TOUCH TO INITIALIZE UtilityOS V2.8.0</div>
+    <div id="boot-screen">TOUCH TO INITIALIZE UtilityOS V2.8.5</div>
 
     <video id="camera-preview" autoplay playsinline></video>
     <div class="scan-line"></div>
 
-    <!-- 隠しYouTubeプレイヤー -->
     <div id="youtube-player-container">
         <div id="yt-player"></div>
     </div>
@@ -139,7 +137,7 @@
                 <span class="title">SYSTEM_LOG</span>
                 <span id="system-status-text">KERNEL: STANDBY</span><br>
                 LINK: EARPODS_CONNECTED<br>
-                OS: UtilityOS_v2.8.0
+                OS: UtilityOS_v2.8.5
             </div>
             <div class="block">
                 <span class="title">TIMESTAMP</span>
@@ -150,12 +148,20 @@
 
         <div id="reticle"></div>
 
-        <!-- 中央HUD：全曲音声検索 ＆ BGMステータス -->
+        <!-- 中央HUD：番号選択式プレイリスト -->
         <div class="section" style="justify-content: center;">
-            <div class="block yt-block" style="text-align: center; min-width: 280px;">
-                <span class="title" style="color: var(--yt-red);">UNIVERSAL_AUDIO_SEARCH</span>
+            <div class="block yt-block" style="text-align: center; min-width: 300px;">
+                <span class="title" style="color: var(--yt-red);">OASIS_TRACK_SELECTOR</span>
                 VOICEIN: <span id="voice-cmd" class="voice-active">LISTENING...</span><br>
-                NOW_PLAYING: <span id="bgm-status">STANDBY</span>
+                STATUS: <span id="bgm-status">STANDBY</span>
+                
+                <div class="playlist-box">
+                    <div id="track-1">1. Wonderwall</div>
+                    <div id="track-2">2. Whatever</div>
+                    <div id="track-3">3. Don't Look Back In Anger</div>
+                    <div id="track-4">4. Lyla</div>
+                    <div id="track-5">5. Little by Little</div>
+                </div>
             </div>
         </div>
 
@@ -170,13 +176,11 @@
                 <span class="title">ENVIRONMENT</span>
                 TEMP: <span id="ext-temp" style="font-weight: bold; color: #fff;">--.-</span>°C<br>
                 VISUAL: ENABLED<br>
-                LIGHT: 100%_MASKED<br>
                 HUD: STABLE
             </div>
         </div>
     </div>
 
-    <!-- YouTube API スクリプトの読み込み -->
     <script src="https://www.youtube.com/iframe_api"></script>
 
     <script>
@@ -187,21 +191,27 @@
         const API_KEY = "d465f54b761e798103a827b981556cc7";
         let lastTempFetchTime = 0;
 
-        // 初期状態でロードしておく楽曲（Oasis - Wonderwall）
-        const INITIAL_VIDEO_ID = "6hzrDeceWTc"; 
+        // 指定の5曲のYouTube Official Video ID
+        const playlist = {
+            1: { title: "Wonderwall", id: "6hzrDeceWTc" },
+            2: { title: "Whatever", id: "CAE7c1sLInE" },
+            3: { title: "Don't Look Back In Anger", id: "r8OipmKFDeM" },
+            4: { title: "Lyla", id: "YICJplq1oEQ" },
+            5: { title: "Little by Little", id: "ic-A69L_L9Y" }
+        };
 
         function onYouTubeIframeAPIReady() {
             ytPlayer = new YT.Player('yt-player', {
                 height: '200',
                 width: '200',
-                videoId: INITIAL_VIDEO_ID,
+                videoId: playlist[1].id,
                 playerVars: {
                     'playsinline': 1,
                     'controls': 0
                 },
                 events: {
                     'onReady': () => {
-                        document.getElementById('bgm-status').innerText = "READY";
+                        document.getElementById('bgm-status').innerText = "READY (SAY 1-5)";
                     }
                 }
             });
@@ -214,9 +224,16 @@
             document.getElementById('boot-screen').style.display = 'none';
             document.getElementById('system-status-text').innerText = "KERNEL: ACTIVE";
 
+            // ブラウザの自動再生制御を初期化（タップジェスチャーでアンロック）
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
             if (audioContext.state === 'suspended') {
                 await audioContext.resume();
+            }
+
+            // YouTubeプレイヤーをタップ操作と連動させてアクティブ化
+            if (ytPlayer && ytPlayer.playVideo) {
+                ytPlayer.playVideo();
+                setTimeout(() => { ytPlayer.pauseVideo(); }, 100);
             }
 
             initCamera();
@@ -243,10 +260,7 @@
                 const javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
 
                 analyser.fftSize = 1024;
-
-                microphone.connect(audioContext.destination);
                 microphone.connect(analyser);
-                analyser.connect(javascriptNode);
                 javascriptNode.connect(audioContext.destination);
 
                 javascriptNode.onaudioprocess = function() {
@@ -277,7 +291,6 @@
             navigator.geolocation.watchPosition(pos => {
                 const lat = pos.coords.latitude;
                 const lon = pos.coords.longitude;
-
                 document.getElementById('lat').innerText = lat.toFixed(4);
                 document.getElementById('lon').innerText = lon.toFixed(4);
                 document.getElementById('alt').innerText = pos.coords.altitude ? pos.coords.altitude.toFixed(1) : '0.0';
@@ -291,37 +304,30 @@
         }
 
         function fetchTemperature(lat, lon) {
-            if (API_KEY === "d465f54b761e798103a827b981556cc7") return;
-
+            if (API_KEY === "YOUR_API_KEY_HERE") return;
             const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}`;
-
             fetch(url)
                 .then(response => response.json())
                 .then(data => {
                     if (data.main && data.main.temp !== undefined) {
                         document.getElementById('ext-temp').innerText = data.main.temp.toFixed(1);
                     }
-                })
-                .catch(err => console.error("Temp API Error:", err));
+                });
         }
 
         function updateClock() {
             const now = new Date();
             document.getElementById('clock').innerText = now.toTimeString().split(' ')[0];
         }
-
         setInterval(updateClock, 1000);
         updateClock();
 
         /* =========================================================
-           ★ 全曲対応：音声認識 ＆ 自由ワード検索再生エンジン
+           音声認識 ＆ 番号指定再生処理
         ========================================================= */
         function initVoiceRecognition() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) {
-                document.getElementById('voice-cmd').innerText = "NOT_SUPPORTED";
-                return;
-            }
+            if (!SpeechRecognition) return;
 
             const recognition = new SpeechRecognition();
             recognition.lang = 'ja-JP';
@@ -333,52 +339,49 @@
                 const transcript = event.results[lastIndex][0].transcript.trim();
                 document.getElementById('voice-cmd').innerText = `"${transcript}"`;
 
-                // 基本的な再生・一時停止コマンド
-                if (transcript.includes("止めて") || transcript.includes("ストップ") || transcript.includes("一時停止")) {
+                // 一時停止・再開コマンド
+                if (transcript.includes("止めて") || transcript.includes("ストップ") || transcript.includes("停止")) {
                     if (ytPlayer) ytPlayer.pauseVideo();
                     document.getElementById('bgm-status').innerText = "PAUSED";
-                } else if (transcript === "再生" || transcript === "スタート" || transcript === "再開") {
+                    return;
+                }
+                if (transcript.includes("再開") || transcript.includes("スタート")) {
                     if (ytPlayer) ytPlayer.playVideo();
                     document.getElementById('bgm-status').innerText = "PLAYING";
-                } 
-                // 「〇〇流して」「〇〇かけて」「〇〇再生」の音声コマンドで全曲検索！
-                else if (transcript.includes("流して") || transcript.includes("かけて") || transcript.includes("再生")) {
-                    let query = transcript
-                        .replace("流して", "")
-                        .replace("かけて", "")
-                        .replace("再生", "")
-                        .replace("を", "")
-                        .replace("の曲", "")
-                        .trim();
+                    return;
+                }
 
-                    if (query.length > 0) {
-                        searchAndPlayYouTube(query);
-                    }
+                // 番号・曲名マッチング
+                if (transcript.includes("1") || transcript.includes("１") || transcript.includes("いち") || transcript.includes("ワンダーウォール")) {
+                    playTrack(1);
+                } else if (transcript.includes("2") || transcript.includes("２") || transcript.includes("に") || transcript.includes("ホワットエバー")) {
+                    playTrack(2);
+                } else if (transcript.includes("3") || transcript.includes("３") || transcript.includes("さん") || transcript.includes("ドントルックバック")) {
+                    playTrack(3);
+                } else if (transcript.includes("4") || transcript.includes("４") || transcript.includes("よん") || transcript.includes("ライラ")) {
+                    playTrack(4);
+                } else if (transcript.includes("5") || transcript.includes("５") || transcript.includes("ご") || transcript.includes("リトルバイリトル")) {
+                    playTrack(5);
                 }
             };
 
-            recognition.onerror = (err) => { console.error("Speech Error: ", err); };
             recognition.onend = () => { recognition.start(); };
-
             recognition.start();
         }
 
-        // 検索キーワードを使ってYouTubeプレイヤーで自動再生する処理
-        function searchAndPlayYouTube(query) {
-            if (!ytPlayer) return;
+        function playTrack(num) {
+            if (!ytPlayer || !playlist[num]) return;
 
-            document.getElementById('bgm-status').innerText = `SEARCHING: "${query}"`;
+            // ハイライト表示の更新
+            for (let i = 1; i <= 5; i++) {
+                const el = document.getElementById(`track-${i}`);
+                if (el) el.classList.remove('active-track');
+            }
+            const activeEl = document.getElementById(`track-${num}`);
+            if (activeEl) activeEl.classList.add('active-track');
 
-            // YouTubeの検索リスト再生機能（APIキー不要の標準組み込み機能）
-            ytPlayer.loadPlaylist({
-                listType: 'search',
-                list: query,
-                index: 0
-            });
-
-            setTimeout(() => {
-                document.getElementById('bgm-status').innerText = `PLAYING: "${query}"`;
-            }, 1000);
+            document.getElementById('bgm-status').innerText = `PLAYING: #${num} ${playlist[num].title}`;
+            ytPlayer.loadVideoById(playlist[num].id);
         }
     </script>
 </body>
