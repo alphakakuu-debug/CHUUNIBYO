@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>UtilityOS TYPE-PROTO V2.6.0</title>
+    <title>UtilityOS TYPE-PROTO V2.8.0</title>
     <style>
         :root {
             --util-cyan: #00f2ff;
             --bg-black: rgba(0, 0, 0, 0.5);
-            --spotify-green: #1db954;
+            --yt-red: #ff0000;
         }
 
         body, html {
@@ -101,22 +101,37 @@
             cursor: pointer;
         }
 
-        /* 追加：Spotify & Voice UIスタイル */
-        .spotify-block {
-            border-left-color: var(--spotify-green) !important;
+        .yt-block {
+            border-left-color: var(--yt-red) !important;
         }
         .voice-active {
-            color: var(--spotify-green);
+            color: #00f2ff;
             font-weight: bold;
+        }
+
+        /* YouTubeプレイヤーを画面外に隠す設定（音声のみ抽出） */
+        #youtube-player-container {
+            position: fixed;
+            top: -9999px;
+            left: -9999px;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
         }
     </style>
 </head>
 <body onclick="bootSystem()">
 
-    <div id="boot-screen">TOUCH TO INITIALIZE UtilityOS V2.6.0</div>
+    <div id="boot-screen">TOUCH TO INITIALIZE UtilityOS V2.8.0</div>
 
     <video id="camera-preview" autoplay playsinline></video>
     <div class="scan-line"></div>
+
+    <!-- 隠しYouTubeプレイヤー -->
+    <div id="youtube-player-container">
+        <div id="yt-player"></div>
+    </div>
 
     <div id="ui-layer">
         <div class="section">
@@ -124,7 +139,7 @@
                 <span class="title">SYSTEM_LOG</span>
                 <span id="system-status-text">KERNEL: STANDBY</span><br>
                 LINK: EARPODS_CONNECTED<br>
-                OS: UtilityOS_v2.6.0
+                OS: UtilityOS_v2.8.0
             </div>
             <div class="block">
                 <span class="title">TIMESTAMP</span>
@@ -135,12 +150,12 @@
 
         <div id="reticle"></div>
 
-        <!-- 追加：中央HUDの下部に音声コマンド & Spotifyステータスを表示 -->
+        <!-- 中央HUD：全曲音声検索 ＆ BGMステータス -->
         <div class="section" style="justify-content: center;">
-            <div class="block spotify-block" style="text-align: center; min-width: 250px;">
-                <span class="title" style="color: var(--spotify-green);">VOICE_AUDIO_CONTROL</span>
+            <div class="block yt-block" style="text-align: center; min-width: 280px;">
+                <span class="title" style="color: var(--yt-red);">UNIVERSAL_AUDIO_SEARCH</span>
                 VOICEIN: <span id="voice-cmd" class="voice-active">LISTENING...</span><br>
-                SPOTIFY: <span id="spotify-status">STANDBY</span>
+                NOW_PLAYING: <span id="bgm-status">STANDBY</span>
             </div>
         </div>
 
@@ -161,16 +176,36 @@
         </div>
     </div>
 
+    <!-- YouTube API スクリプトの読み込み -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+
     <script>
         let audioContext;
         let isBooted = false;
+        let ytPlayer = null;
 
-        // OpenWeatherMap API Key
         const API_KEY = "d465f54b761e798103a827b981556cc7";
         let lastTempFetchTime = 0;
 
-        // ★ Spotify API Token（取得したアクセストークンをここに入力）
-        let SPOTIFY_ACCESS_TOKEN = "YOUR_SPOTIFY_ACCESS_TOKEN";
+        // 初期状態でロードしておく楽曲（Oasis - Wonderwall）
+        const INITIAL_VIDEO_ID = "6hzrDeceWTc"; 
+
+        function onYouTubeIframeAPIReady() {
+            ytPlayer = new YT.Player('yt-player', {
+                height: '200',
+                width: '200',
+                videoId: INITIAL_VIDEO_ID,
+                playerVars: {
+                    'playsinline': 1,
+                    'controls': 0
+                },
+                events: {
+                    'onReady': () => {
+                        document.getElementById('bgm-status').innerText = "READY";
+                    }
+                }
+            });
+        }
 
         async function bootSystem() {
             if (isBooted) return;
@@ -187,7 +222,7 @@
             initCamera();
             initSoundMonitor();
             updateLocation();
-            initVoiceRecognition(); // 音声認識の起動
+            initVoiceRecognition();
         }
 
         async function initCamera() {
@@ -256,7 +291,7 @@
         }
 
         function fetchTemperature(lat, lon) {
-            if (API_KEY === "YOUR_API_KEY_HERE") return;
+            if (API_KEY === "d465f54b761e798103a827b981556cc7") return;
 
             const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}`;
 
@@ -279,7 +314,7 @@
         updateClock();
 
         /* =========================================================
-           ★ 音声認識 (Web Speech API) & Spotify 操作モジュール
+           ★ 全曲対応：音声認識 ＆ 自由ワード検索再生エンジン
         ========================================================= */
         function initVoiceRecognition() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -298,75 +333,52 @@
                 const transcript = event.results[lastIndex][0].transcript.trim();
                 document.getElementById('voice-cmd').innerText = `"${transcript}"`;
 
-                // キーワード判定
-                if (transcript.includes("再生") || transcript.includes("スタート") || transcript.includes("プレイ")) {
-                    controlSpotify("play");
-                } else if (transcript.includes("止めて") || transcript.includes("ストップ") || transcript.includes("一時停止")) {
-                    controlSpotify("pause");
-                } else if (transcript.includes("次") || transcript.includes("スキップ")) {
-                    controlSpotify("next");
-                } else if (transcript.includes("前") || transcript.includes("戻して")) {
-                    controlSpotify("previous");
+                // 基本的な再生・一時停止コマンド
+                if (transcript.includes("止めて") || transcript.includes("ストップ") || transcript.includes("一時停止")) {
+                    if (ytPlayer) ytPlayer.pauseVideo();
+                    document.getElementById('bgm-status').innerText = "PAUSED";
+                } else if (transcript === "再生" || transcript === "スタート" || transcript === "再開") {
+                    if (ytPlayer) ytPlayer.playVideo();
+                    document.getElementById('bgm-status').innerText = "PLAYING";
+                } 
+                // 「〇〇流して」「〇〇かけて」「〇〇再生」の音声コマンドで全曲検索！
+                else if (transcript.includes("流して") || transcript.includes("かけて") || transcript.includes("再生")) {
+                    let query = transcript
+                        .replace("流して", "")
+                        .replace("かけて", "")
+                        .replace("再生", "")
+                        .replace("を", "")
+                        .replace("の曲", "")
+                        .trim();
+
+                    if (query.length > 0) {
+                        searchAndPlayYouTube(query);
+                    }
                 }
             };
 
-            recognition.onerror = (err) => {
-                console.error("Speech Error: ", err);
-            };
-
-            // 認識が切れても自動再開
-            recognition.onend = () => {
-                recognition.start();
-            };
+            recognition.onerror = (err) => { console.error("Speech Error: ", err); };
+            recognition.onend = () => { recognition.start(); };
 
             recognition.start();
         }
 
-        async function controlSpotify(action) {
-            if (SPOTIFY_ACCESS_TOKEN === "YOUR_SPOTIFY_ACCESS_TOKEN") {
-                document.getElementById('spotify-status').innerText = "TOKEN_MISSING";
-                return;
-            }
+        // 検索キーワードを使ってYouTubeプレイヤーで自動再生する処理
+        function searchAndPlayYouTube(query) {
+            if (!ytPlayer) return;
 
-            let endpoint = "";
-            let method = "POST";
+            document.getElementById('bgm-status').innerText = `SEARCHING: "${query}"`;
 
-            switch (action) {
-                case "play":
-                    endpoint = "https://api.spotify.com/v1/me/player/play";
-                    method = "PUT";
-                    break;
-                case "pause":
-                    endpoint = "https://api.spotify.com/v1/me/player/pause";
-                    method = "PUT";
-                    break;
-                case "next":
-                    endpoint = "https://api.spotify.com/v1/me/player/next";
-                    method = "POST";
-                    break;
-                case "previous":
-                    endpoint = "https://api.spotify.com/v1/me/player/previous";
-                    method = "POST";
-                    break;
-            }
+            // YouTubeの検索リスト再生機能（APIキー不要の標準組み込み機能）
+            ytPlayer.loadPlaylist({
+                listType: 'search',
+                list: query,
+                index: 0
+            });
 
-            try {
-                const res = await fetch(endpoint, {
-                    method: method,
-                    headers: {
-                        'Authorization': `Bearer ${SPOTIFY_ACCESS_TOKEN}`
-                    }
-                });
-
-                if (res.ok || res.status === 204) {
-                    document.getElementById('spotify-status').innerText = `EXEC: ${action.toUpperCase()}`;
-                } else {
-                    document.getElementById('spotify-status').innerText = `ERR: ${res.status}`;
-                }
-            } catch (err) {
-                console.error("Spotify API Error:", err);
-                document.getElementById('spotify-status').innerText = "API_CONNECT_FAIL";
-            }
+            setTimeout(() => {
+                document.getElementById('bgm-status').innerText = `PLAYING: "${query}"`;
+            }, 1000);
         }
     </script>
 </body>
