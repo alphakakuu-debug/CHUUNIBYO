@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>UtilityOS TYPE-PROTO V2.5.1</title>
+    <title>UtilityOS TYPE-PROTO V2.6.0</title>
     <style>
         :root {
             --util-cyan: #00f2ff;
             --bg-black: rgba(0, 0, 0, 0.5);
+            --spotify-green: #1db954;
         }
 
         body, html {
@@ -99,11 +100,20 @@
             font-size: 14px;
             cursor: pointer;
         }
+
+        /* 追加：Spotify & Voice UIスタイル */
+        .spotify-block {
+            border-left-color: var(--spotify-green) !important;
+        }
+        .voice-active {
+            color: var(--spotify-green);
+            font-weight: bold;
+        }
     </style>
 </head>
 <body onclick="bootSystem()">
 
-    <div id="boot-screen">TOUCH TO INITIALIZE UtilityOS</div>
+    <div id="boot-screen">TOUCH TO INITIALIZE UtilityOS V2.6.0</div>
 
     <video id="camera-preview" autoplay playsinline></video>
     <div class="scan-line"></div>
@@ -114,7 +124,7 @@
                 <span class="title">SYSTEM_LOG</span>
                 <span id="system-status-text">KERNEL: STANDBY</span><br>
                 LINK: EARPODS_CONNECTED<br>
-                OS: UtilityOS_v2.5.1
+                OS: UtilityOS_v2.6.0
             </div>
             <div class="block">
                 <span class="title">TIMESTAMP</span>
@@ -124,6 +134,15 @@
         </div>
 
         <div id="reticle"></div>
+
+        <!-- 追加：中央HUDの下部に音声コマンド & Spotifyステータスを表示 -->
+        <div class="section" style="justify-content: center;">
+            <div class="block spotify-block" style="text-align: center; min-width: 250px;">
+                <span class="title" style="color: var(--spotify-green);">VOICE_AUDIO_CONTROL</span>
+                VOICEIN: <span id="voice-cmd" class="voice-active">LISTENING...</span><br>
+                SPOTIFY: <span id="spotify-status">STANDBY</span>
+            </div>
+        </div>
 
         <div class="section">
             <div class="block">
@@ -146,11 +165,12 @@
         let audioContext;
         let isBooted = false;
 
-        // ★ここに OpenWeatherMap の APIキー を入力をしてください
+        // OpenWeatherMap API Key
         const API_KEY = "d465f54b761e798103a827b981556cc7";
-
-        // 前回気温を取得した時間を記録する変数
         let lastTempFetchTime = 0;
+
+        // ★ Spotify API Token（取得したアクセストークンをここに入力）
+        let SPOTIFY_ACCESS_TOKEN = "YOUR_SPOTIFY_ACCESS_TOKEN";
 
         async function bootSystem() {
             if (isBooted) return;
@@ -167,6 +187,7 @@
             initCamera();
             initSoundMonitor();
             updateLocation();
+            initVoiceRecognition(); // 音声認識の起動
         }
 
         async function initCamera() {
@@ -226,7 +247,6 @@
                 document.getElementById('lon').innerText = lon.toFixed(4);
                 document.getElementById('alt').innerText = pos.coords.altitude ? pos.coords.altitude.toFixed(1) : '0.0';
 
-                // ★1分（60,000ミリ秒）以上経過していたら API で気温を取得
                 const now = Date.now();
                 if (now - lastTempFetchTime > 60000) { 
                     fetchTemperature(lat, lon);
@@ -257,6 +277,97 @@
 
         setInterval(updateClock, 1000);
         updateClock();
+
+        /* =========================================================
+           ★ 音声認識 (Web Speech API) & Spotify 操作モジュール
+        ========================================================= */
+        function initVoiceRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                document.getElementById('voice-cmd').innerText = "NOT_SUPPORTED";
+                return;
+            }
+
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'ja-JP';
+            recognition.continuous = true;
+            recognition.interimResults = false;
+
+            recognition.onresult = (event) => {
+                const lastIndex = event.results.length - 1;
+                const transcript = event.results[lastIndex][0].transcript.trim();
+                document.getElementById('voice-cmd').innerText = `"${transcript}"`;
+
+                // キーワード判定
+                if (transcript.includes("再生") || transcript.includes("スタート") || transcript.includes("プレイ")) {
+                    controlSpotify("play");
+                } else if (transcript.includes("止めて") || transcript.includes("ストップ") || transcript.includes("一時停止")) {
+                    controlSpotify("pause");
+                } else if (transcript.includes("次") || transcript.includes("スキップ")) {
+                    controlSpotify("next");
+                } else if (transcript.includes("前") || transcript.includes("戻して")) {
+                    controlSpotify("previous");
+                }
+            };
+
+            recognition.onerror = (err) => {
+                console.error("Speech Error: ", err);
+            };
+
+            // 認識が切れても自動再開
+            recognition.onend = () => {
+                recognition.start();
+            };
+
+            recognition.start();
+        }
+
+        async function controlSpotify(action) {
+            if (SPOTIFY_ACCESS_TOKEN === "YOUR_SPOTIFY_ACCESS_TOKEN") {
+                document.getElementById('spotify-status').innerText = "TOKEN_MISSING";
+                return;
+            }
+
+            let endpoint = "";
+            let method = "POST";
+
+            switch (action) {
+                case "play":
+                    endpoint = "https://api.spotify.com/v1/me/player/play";
+                    method = "PUT";
+                    break;
+                case "pause":
+                    endpoint = "https://api.spotify.com/v1/me/player/pause";
+                    method = "PUT";
+                    break;
+                case "next":
+                    endpoint = "https://api.spotify.com/v1/me/player/next";
+                    method = "POST";
+                    break;
+                case "previous":
+                    endpoint = "https://api.spotify.com/v1/me/player/previous";
+                    method = "POST";
+                    break;
+            }
+
+            try {
+                const res = await fetch(endpoint, {
+                    method: method,
+                    headers: {
+                        'Authorization': `Bearer ${SPOTIFY_ACCESS_TOKEN}`
+                    }
+                });
+
+                if (res.ok || res.status === 204) {
+                    document.getElementById('spotify-status').innerText = `EXEC: ${action.toUpperCase()}`;
+                } else {
+                    document.getElementById('spotify-status').innerText = `ERR: ${res.status}`;
+                }
+            } catch (err) {
+                console.error("Spotify API Error:", err);
+                document.getElementById('spotify-status').innerText = "API_CONNECT_FAIL";
+            }
+        }
     </script>
 </body>
 </html>
