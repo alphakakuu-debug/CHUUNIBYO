@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>UtilityOS TYPE-PROTO V2.8.6</title>
+    <title>UtilityOS TYPE-PROTO V2.8.7</title>
     <style>
         :root {
             --util-cyan: #00f2ff;
@@ -123,7 +123,6 @@
             border-left: 3px solid var(--util-cyan);
         }
 
-        /* 画面隅にほぼ透明で配置（ブラウザの停止対策） */
         #youtube-player-container {
             position: fixed;
             bottom: 0; right: 0;
@@ -136,7 +135,7 @@
 </head>
 <body onclick="bootSystem()">
 
-    <div id="boot-screen">TOUCH TO INITIALIZE UtilityOS V2.8.6</div>
+    <div id="boot-screen">TOUCH TO INITIALIZE UtilityOS V2.8.7</div>
 
     <video id="camera-preview" autoplay playsinline></video>
     <div class="scan-line"></div>
@@ -151,7 +150,7 @@
                 <span class="title">SYSTEM_LOG</span>
                 <span id="system-status-text">KERNEL: STANDBY</span><br>
                 LINK: EARPODS_CONNECTED<br>
-                OS: UtilityOS_v2.8.6
+                OS: UtilityOS_v2.8.7
             </div>
             <div class="block">
                 <span class="title">TIMESTAMP</span>
@@ -162,7 +161,6 @@
 
         <div id="reticle"></div>
 
-        <!-- 中央HUD：番号選択式プレイリスト -->
         <div class="section" style="justify-content: center;">
             <div class="block yt-block" style="text-align: center; min-width: 320px;">
                 <span class="title" style="color: var(--yt-red);">OASIS_TRACK_SELECTOR</span>
@@ -224,7 +222,7 @@
                 },
                 events: {
                     'onReady': () => {
-                        document.getElementById('bgm-status').innerText = "READY (SAY OR TOUCH 1-5)";
+                        document.getElementById('bgm-status').innerText = "TOUCH SCREEN TO START";
                     }
                 }
             });
@@ -242,10 +240,11 @@
                 await audioContext.resume();
             }
 
-            // 最初のタップでYouTubeプレイヤーの再生ロックを解除
-            if (ytPlayer && ytPlayer.playVideo) {
-                ytPlayer.playVideo();
-                setTimeout(() => { ytPlayer.pauseVideo(); }, 300);
+            // ★重要：画面タップ時にYouTubeプレイヤーを直接「再生＆アンミュート」させてロック解除する
+            if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
+                ytPlayer.unMute();
+                ytPlayer.setVolume(100);
+                playTrack(1); // 起動と同時に自動で1曲目（Wonderwall）を開始！
             }
 
             initCamera();
@@ -335,9 +334,6 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        /* =========================================================
-           強化版：音声認識 ＆ 番号判定処理
-        ========================================================= */
         function initVoiceRecognition() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
@@ -353,13 +349,10 @@
             recognition.onresult = (event) => {
                 const lastIndex = event.results.length - 1;
                 const transcript = event.results[lastIndex][0].transcript.trim();
-                
-                // 認識されたテキストをリアルタイムで表示
                 document.getElementById('voice-cmd').innerText = `"${transcript}"`;
 
                 const text = transcript.toLowerCase();
 
-                // 停止・再生コマンド
                 if (text.includes("止めて") || text.includes("ストップ") || text.includes("停止") || text.includes("pause")) {
                     if (ytPlayer) ytPlayer.pauseVideo();
                     document.getElementById('bgm-status').innerText = "PAUSED";
@@ -371,7 +364,6 @@
                     return;
                 }
 
-                // 表記の揺れ（漢字・ひらがな・数字・英語・曲名）をすべてカバー
                 if (/1|１|一|いち|イチ|ワン|wonderwall|ワンダーウォール/.test(text)) {
                     playTrack(1);
                 } else if (/2|２|二|に|ニ|ツー|whatever|ホワットエバー/.test(text)) {
@@ -385,21 +377,15 @@
                 }
             };
 
-            recognition.onerror = (err) => {
-                console.error("Speech Error:", err);
-            };
-
-            recognition.onend = () => { 
-                recognition.start(); 
-            };
-
+            recognition.onerror = (err) => { console.error("Speech Error:", err); };
+            recognition.onend = () => { recognition.start(); };
             recognition.start();
         }
 
+        // ★再生処理の強化（消音解除＋音量100の強制実行）
         function playTrack(num) {
             if (!playlist[num]) return;
 
-            // ハイライト表示の更新
             for (let i = 1; i <= 5; i++) {
                 const el = document.getElementById(`track-${i}`);
                 if (el) el.classList.remove('active-track');
@@ -410,6 +396,8 @@
             document.getElementById('bgm-status').innerText = `PLAYING: #${num} ${playlist[num].title}`;
 
             if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
+                ytPlayer.unMute();
+                ytPlayer.setVolume(100);
                 ytPlayer.loadVideoById(playlist[num].id);
             }
         }
