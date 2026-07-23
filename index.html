@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>UtilityOS TYPE-PROTO V3.0.0</title>
+    <title>UtilityOS TYPE-PROTO V4.1.0</title>
     <style>
         :root {
             --util-cyan: #00f2ff;
-            --bg-black: rgba(0, 0, 0, 0.65);
+            --bg-black: rgba(0, 0, 0, 0.7);
         }
 
         body, html {
@@ -60,54 +60,55 @@
             display: block;
         }
 
-        /* --- 動く照準（レティクル） --- */
-        #reticle-container {
+        /* 左上集約ブロックのカスタマイズ */
+        #top-left-block {
+            min-width: 200px;
+            max-width: 230px;
+        }
+
+        #speed-val {
+            font-size: 22px;
+            font-weight: bold;
+            color: #fff;
+            line-height: 1.1;
+            margin-bottom: 6px;
+        }
+
+        /* 波形キャンバス */
+        #waveform-canvas {
+            width: 100%;
+            height: 28px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 242, 255, 0.3);
+            margin-bottom: 6px;
+        }
+
+        /* ログ表示用 */
+        #memo-logs {
+            font-size: 9px;
+            color: #fff;
+            max-height: 48px;
+            overflow: hidden;
+            line-height: 1.3;
+        }
+
+        /* 中央の静的クロスヘア */
+        #crosshair {
             position: fixed;
-            top: 45%; left: 50%;
+            top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 180px; height: 180px;
+            width: 20px; height: 20px;
             pointer-events: none;
-            display: flex;
-            justify-content: center;
-            align-items: center;
         }
 
-        .reticle-ring {
+        #crosshair::before, #crosshair::after {
+            content: '';
             position: absolute;
-            width: 100%; height: 100%;
-            border: 1px dashed rgba(0, 242, 255, 0.4);
-            border-radius: 50%;
-            animation: rotateRing 12s linear infinite;
+            background: rgba(0, 242, 255, 0.4);
         }
 
-        .reticle-core {
-            width: 80px; height: 80px;
-            border: 1px solid var(--util-cyan);
-            border-radius: 4px;
-            animation: pulseCore 2s ease-in-out infinite alternate;
-        }
-
-        @keyframes rotateRing { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes pulseCore { 0% { opacity: 0.3; transform: scale(0.95); } 100% { opacity: 0.8; transform: scale(1.05); } }
-
-        /* --- 動くスキャンライン --- */
-        .scan-line {
-            position: fixed;
-            width: 100%; height: 3px;
-            background: linear-gradient(90deg, transparent, var(--util-cyan), transparent);
-            box-shadow: 0 0 15px var(--util-cyan);
-            top: 0;
-            animation: scan 3.5s ease-in-out infinite;
-            z-index: 5;
-            pointer-events: none;
-            opacity: 0.7;
-        }
-
-        @keyframes scan {
-            0% { top: -5%; }
-            50% { top: 105%; }
-            100% { top: -5%; }
-        }
+        #crosshair::before { top: 9px; left: 0; width: 20px; height: 2px; }
+        #crosshair::after { top: 0; left: 9px; width: 2px; height: 20px; }
 
         #boot-screen {
             position: fixed;
@@ -127,45 +128,46 @@
 </head>
 <body onclick="bootSystem()">
 
-    <div id="boot-screen">TOUCH TO INITIALIZE UtilityOS V3.0.0</div>
+    <div id="boot-screen">TOUCH TO INITIALIZE UtilityOS V4.1.0</div>
 
     <video id="camera-preview" autoplay playsinline></video>
-    <div class="scan-line"></div>
+    <div id="crosshair"></div>
 
     <div id="ui-layer">
-        <!-- 上部ヘッダー -->
+        <!-- 上部ヘッダー（左側に 速度・波形・音声ログ を集約） -->
         <div class="section">
-            <div class="block">
-                <span class="title">SYSTEM_LOG</span>
-                <span id="system-status-text">KERNEL: STANDBY</span><br>
-                BATTERY: <span id="battery-status" style="color: #fff;">--%</span><br>
-                OS: UtilityOS_v3.0.0
-            </div>
-            <div class="block">
-                <span class="title">TIMESTAMP & HEADING</span>
-                <div id="clock" style="font-size: 18px;">00:00:00</div>
-                DIR: <span id="heading-val" style="color: #fff; font-weight: bold;">---° --</span>
-            </div>
-        </div>
+            <div class="block" id="top-left-block">
+                <span class="title">SPEED (VELOCITY)</span>
+                <div id="speed-val">0.0 <span style="font-size: 11px; font-weight: normal; color: var(--util-cyan);">km/h</span></div>
 
-        <!-- 動くグラフィック照準 -->
-        <div id="reticle-container">
-            <div class="reticle-ring"></div>
-            <div class="reticle-core"></div>
+                <span class="title">AUDIO WAVEFORM</span>
+                <canvas id="waveform-canvas"></canvas>
+
+                <span class="title">VOICE MEMO LOGS</span>
+                <div id="memo-logs">
+                    <div>-- NO LOGS YET --</div>
+                </div>
+            </div>
+
+            <div class="block">
+                <span class="title">TIME & SESSION</span>
+                <div id="clock" style="font-size: 18px; font-weight: bold;">00:00:00</div>
+                TIMER: <span id="session-timer" style="color: #fff;">00:00</span>
+            </div>
         </div>
 
         <!-- 中央：音声認識状態表示 -->
         <div class="section" style="justify-content: center;">
-            <div class="block" style="text-align: center; min-width: 260px;">
+            <div class="block" style="text-align: center; min-width: 240px;">
                 <span class="title">VOICE_INPUT_MONITOR</span>
-                RECOGNIZED: <span id="voice-cmd" class="voice-active">LISTENING...</span>
+                <span id="voice-cmd" class="voice-active">LISTENING...</span>
             </div>
         </div>
 
         <!-- 下部フッター -->
         <div class="section">
             <div class="block">
-                <span class="title">GEOLOCATION_DATA</span>
+                <span class="title">GPS_DATA</span>
                 LAT: <span id="lat">---.----</span><br>
                 LON: <span id="lon">---.----</span><br>
                 ALT: <span id="alt">---</span>m
@@ -173,7 +175,7 @@
             <div class="block" style="text-align: right; border-left: none; border-right: 3px solid var(--util-cyan);">
                 <span class="title">ENVIRONMENT</span>
                 TEMP: <span id="ext-temp" style="font-weight: bold; color: #fff;">--.-</span>°C<br>
-                VISUAL: ENABLED<br>
+                WEATHER: <span id="weather-desc">LOADING</span><br>
                 HUD: STABLE
             </div>
         </div>
@@ -182,28 +184,32 @@
     <script>
         let audioContext;
         let isBooted = false;
+        let startTime;
 
         const API_KEY = "d465f54b761e798103a827b981556cc7";
         let lastTempFetchTime = 0;
+
+        // 音声ログ保存用
+        const memoLogs = [];
 
         async function bootSystem() {
             if (isBooted) return;
             isBooted = true;
             
             document.getElementById('boot-screen').style.display = 'none';
-            document.getElementById('system-status-text').innerText = "KERNEL: ACTIVE";
 
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
             if (audioContext.state === 'suspended') {
                 await audioContext.resume();
             }
 
+            startTime = Date.now();
+            setInterval(updateSessionTimer, 1000);
+
             initCamera();
-            initSoundMonitor();
+            initSoundAndAudioPass();
             updateLocation();
             initVoiceRecognition();
-            initBatteryMonitor();
-            initCompass();
         }
 
         async function initCamera() {
@@ -216,41 +222,61 @@
             } catch (err) { console.error("Camera Error: ", err); }
         }
 
-        async function initSoundMonitor() {
+        /* 音声パススルー + 波形描画 */
+        async function initSoundAndAudioPass() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                const analyser = audioContext.createAnalyser();
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: false,
+                        noiseSuppression: false,
+                        autoGainControl: true
+                    } 
+                });
+
                 const microphone = audioContext.createMediaStreamSource(stream);
-                const javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
+                const analyser = audioContext.createAnalyser();
+                analyser.fftSize = 64;
 
-                analyser.fftSize = 1024;
+                // 音声パススルー（スピーカー出力）
+                microphone.connect(audioContext.destination);
+
+                // アナライザー接続
                 microphone.connect(analyser);
-                javascriptNode.connect(audioContext.destination);
 
-                javascriptNode.onaudioprocess = function() {
-                    const array = new Uint8Array(analyser.frequencyBinCount);
-                    analyser.getByteFrequencyData(array);
-                    let values = 0;
-                    for (let i = 0; i < array.length; i++) { values += array[i]; }
-                    const average = values / array.length;
-                    updateMonitorUI(average);
-                };
-            } catch (err) { console.error("MIC_ERROR:", err); }
-        }
+                // 波形描画ループ
+                drawWaveform(analyser);
 
-        function updateMonitorUI(volume) {
-            const threshold = 40; 
-            const statusElement = document.getElementById('system-status-text');
-            if (volume > threshold) {
-                document.body.style.boxShadow = "inset 0 0 100px rgba(255, 0, 0, 0.8)";
-                statusElement.innerText = "!! EXTERNAL CONTACT DETECTED !!";
-                setTimeout(() => {
-                    document.body.style.boxShadow = "none";
-                    statusElement.innerText = "SYSTEM: STEALTH_MODE";
-                }, 1000);
+            } catch (err) { 
+                console.error("MIC_ERROR:", err);
             }
         }
 
+        /* 波形をキャンバスへリアルタイム描画 */
+        function drawWaveform(analyser) {
+            const canvas = document.getElementById('waveform-canvas');
+            const ctx = canvas.getContext('2d');
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            function render() {
+                requestAnimationFrame(render);
+                analyser.getByteFrequencyData(dataArray);
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                const barWidth = (canvas.width / bufferLength) * 1.5;
+                let x = 0;
+
+                for (let i = 0; i < bufferLength; i++) {
+                    const barHeight = (dataArray[i] / 255) * canvas.height;
+                    ctx.fillStyle = '#00f2ff';
+                    ctx.fillRect(x, canvas.height - barHeight, barWidth - 1, barHeight);
+                    x += barWidth;
+                }
+            }
+            render();
+        }
+
+        /* GPS情報 ＆ 速度計測 */
         function updateLocation() {
             navigator.geolocation.watchPosition(pos => {
                 const lat = pos.coords.latitude;
@@ -258,6 +284,14 @@
                 document.getElementById('lat').innerText = lat.toFixed(4);
                 document.getElementById('lon').innerText = lon.toFixed(4);
                 document.getElementById('alt').innerText = pos.coords.altitude ? pos.coords.altitude.toFixed(1) : '0.0';
+
+                // 速度計算（m/s を km/h に変換）
+                if (pos.coords.speed !== null && pos.coords.speed !== undefined) {
+                    const speedKmh = (pos.coords.speed * 3.6).toFixed(1);
+                    document.getElementById('speed-val').innerHTML = `${speedKmh} <span style="font-size: 11px; font-weight: normal; color: var(--util-cyan);">km/h</span>`;
+                } else {
+                    document.getElementById('speed-val').innerHTML = `0.0 <span style="font-size: 11px; font-weight: normal; color: var(--util-cyan);">km/h</span>`;
+                }
 
                 const now = Date.now();
                 if (now - lastTempFetchTime > 60000) { 
@@ -276,44 +310,11 @@
                     if (data.main && data.main.temp !== undefined) {
                         document.getElementById('ext-temp').innerText = data.main.temp.toFixed(1);
                     }
+                    if (data.weather && data.weather[0]) {
+                        document.getElementById('weather-desc').innerText = data.weather[0].main.toUpperCase();
+                    }
                 })
                 .catch(err => console.error("Temp Fetch Error:", err));
-        }
-
-        /* 方位磁針（ジャイロ・コンパス）機能 */
-        function initCompass() {
-            if (window.DeviceOrientationEvent) {
-                window.addEventListener('deviceorientation', function(e) {
-                    let heading = e.alpha;
-                    if (e.webkitCompassHeading) {
-                        heading = e.webkitCompassHeading; // iOS用
-                    }
-                    if (heading !== null) {
-                        const deg = Math.round(heading);
-                        const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-                        const dir = dirs[Math.round(deg / 45) % 8];
-                        document.getElementById('heading-val').innerText = `${deg}° ${dir}`;
-                    }
-                }, true);
-            }
-        }
-
-        /* バッテリーモニター機能 */
-        function initBatteryMonitor() {
-            if (navigator.getBattery) {
-                navigator.getBattery().then(battery => {
-                    const updateBattery = () => {
-                        const level = Math.round(battery.level * 100);
-                        const charging = battery.charging ? " (CHG)" : "";
-                        document.getElementById('battery-status').innerText = `${level}%${charging}`;
-                    };
-                    updateBattery();
-                    battery.addEventListener('levelchange', updateBattery);
-                    battery.addEventListener('chargingchange', updateBattery);
-                });
-            } else {
-                document.getElementById('battery-status').innerText = "N/A";
-            }
         }
 
         function updateClock() {
@@ -323,6 +324,15 @@
         setInterval(updateClock, 1000);
         updateClock();
 
+        function updateSessionTimer() {
+            if (!startTime) return;
+            const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+            const mins = Math.floor(elapsedSeconds / 60).toString().padStart(2, '0');
+            const secs = (elapsedSeconds % 60).toString().padStart(2, '0');
+            document.getElementById('session-timer').innerText = `${mins}:${secs}`;
+        }
+
+        /* 音声認識 ＆ ログ自動追加 */
         function initVoiceRecognition() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
@@ -338,12 +348,27 @@
             recognition.onresult = (event) => {
                 const lastIndex = event.results.length - 1;
                 const transcript = event.results[lastIndex][0].transcript.trim();
+                
                 document.getElementById('voice-cmd').innerText = `"${transcript}"`;
+
+                // 発言をタイムスタンプ付きでログ追加
+                addVoiceLog(transcript);
             };
 
             recognition.onerror = (err) => { console.error("Speech Error:", err); };
             recognition.onend = () => { recognition.start(); };
             recognition.start();
+        }
+
+        function addVoiceLog(text) {
+            const now = new Date();
+            const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            
+            memoLogs.unshift(`[${timeStr}] ${text}`);
+            if (memoLogs.length > 3) memoLogs.pop(); // 最新3件に制限
+
+            const logsContainer = document.getElementById('memo-logs');
+            logsContainer.innerHTML = memoLogs.map(log => `<div>${log}</div>`).join('');
         }
     </script>
 </body>
