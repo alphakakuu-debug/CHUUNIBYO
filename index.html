@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>UtilityOS TYPE-PROTO V2.8.5</title>
+    <title>UtilityOS TYPE-PROTO V2.8.6</title>
     <style>
         :root {
             --util-cyan: #00f2ff;
-            --bg-black: rgba(0, 0, 0, 0.5);
+            --bg-black: rgba(0, 0, 0, 0.6);
             --yt-red: #ff0000;
         }
 
@@ -95,34 +95,48 @@
         }
 
         .yt-block { border-left-color: var(--yt-red) !important; }
-        .voice-active { color: #00f2ff; font-weight: bold; }
+        .voice-active { color: #fff; font-weight: bold; background: rgba(0,242,255,0.3); padding: 2px 4px; }
 
-        /* 曲リスト表示 */
         .playlist-box {
             text-align: left;
-            font-size: 10px;
-            line-height: 1.4;
-            margin-top: 5px;
+            font-size: 11px;
+            line-height: 1.6;
+            margin-top: 8px;
         }
-        .active-track {
-            color: #fff;
-            font-weight: bold;
+
+        .track-item {
+            cursor: pointer;
+            padding: 2px 6px;
+            margin: 2px 0;
+            border-radius: 2px;
+            transition: background 0.2s;
+        }
+
+        .track-item:hover {
             background: rgba(0, 242, 255, 0.2);
         }
 
-        /* YouTubeプレイヤーを画面外に隠す */
+        .active-track {
+            color: #fff !important;
+            font-weight: bold;
+            background: rgba(0, 242, 255, 0.4) !important;
+            border-left: 3px solid var(--util-cyan);
+        }
+
+        /* 画面隅にほぼ透明で配置（ブラウザの停止対策） */
         #youtube-player-container {
             position: fixed;
-            top: -9999px; left: -9999px;
+            bottom: 0; right: 0;
             width: 1px; height: 1px;
-            opacity: 0;
+            opacity: 0.01;
             pointer-events: none;
+            z-index: 0;
         }
     </style>
 </head>
 <body onclick="bootSystem()">
 
-    <div id="boot-screen">TOUCH TO INITIALIZE UtilityOS V2.8.5</div>
+    <div id="boot-screen">TOUCH TO INITIALIZE UtilityOS V2.8.6</div>
 
     <video id="camera-preview" autoplay playsinline></video>
     <div class="scan-line"></div>
@@ -137,7 +151,7 @@
                 <span class="title">SYSTEM_LOG</span>
                 <span id="system-status-text">KERNEL: STANDBY</span><br>
                 LINK: EARPODS_CONNECTED<br>
-                OS: UtilityOS_v2.8.5
+                OS: UtilityOS_v2.8.6
             </div>
             <div class="block">
                 <span class="title">TIMESTAMP</span>
@@ -150,17 +164,17 @@
 
         <!-- 中央HUD：番号選択式プレイリスト -->
         <div class="section" style="justify-content: center;">
-            <div class="block yt-block" style="text-align: center; min-width: 300px;">
+            <div class="block yt-block" style="text-align: center; min-width: 320px;">
                 <span class="title" style="color: var(--yt-red);">OASIS_TRACK_SELECTOR</span>
-                VOICEIN: <span id="voice-cmd" class="voice-active">LISTENING...</span><br>
+                RECOGNIZED: <span id="voice-cmd" class="voice-active">LISTENING...</span><br>
                 STATUS: <span id="bgm-status">STANDBY</span>
                 
                 <div class="playlist-box">
-                    <div id="track-1">1. Wonderwall</div>
-                    <div id="track-2">2. Whatever</div>
-                    <div id="track-3">3. Don't Look Back In Anger</div>
-                    <div id="track-4">4. Lyla</div>
-                    <div id="track-5">5. Little by Little</div>
+                    <div id="track-1" class="track-item" onclick="playTrack(1)">1. Wonderwall</div>
+                    <div id="track-2" class="track-item" onclick="playTrack(2)">2. Whatever</div>
+                    <div id="track-3" class="track-item" onclick="playTrack(3)">3. Don't Look Back In Anger</div>
+                    <div id="track-4" class="track-item" onclick="playTrack(4)">4. Lyla</div>
+                    <div id="track-5" class="track-item" onclick="playTrack(5)">5. Little by Little</div>
                 </div>
             </div>
         </div>
@@ -191,7 +205,6 @@
         const API_KEY = "d465f54b761e798103a827b981556cc7";
         let lastTempFetchTime = 0;
 
-        // 指定の5曲のYouTube Official Video ID
         const playlist = {
             1: { title: "Wonderwall", id: "6hzrDeceWTc" },
             2: { title: "Whatever", id: "CAE7c1sLInE" },
@@ -211,7 +224,7 @@
                 },
                 events: {
                     'onReady': () => {
-                        document.getElementById('bgm-status').innerText = "READY (SAY 1-5)";
+                        document.getElementById('bgm-status').innerText = "READY (SAY OR TOUCH 1-5)";
                     }
                 }
             });
@@ -224,16 +237,15 @@
             document.getElementById('boot-screen').style.display = 'none';
             document.getElementById('system-status-text').innerText = "KERNEL: ACTIVE";
 
-            // ブラウザの自動再生制御を初期化（タップジェスチャーでアンロック）
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
             if (audioContext.state === 'suspended') {
                 await audioContext.resume();
             }
 
-            // YouTubeプレイヤーをタップ操作と連動させてアクティブ化
+            // 最初のタップでYouTubeプレイヤーの再生ロックを解除
             if (ytPlayer && ytPlayer.playVideo) {
                 ytPlayer.playVideo();
-                setTimeout(() => { ytPlayer.pauseVideo(); }, 100);
+                setTimeout(() => { ytPlayer.pauseVideo(); }, 300);
             }
 
             initCamera();
@@ -304,7 +316,7 @@
         }
 
         function fetchTemperature(lat, lon) {
-            if (API_KEY === "YOUR_API_KEY_HERE") return;
+            if (!API_KEY) return;
             const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}`;
             fetch(url)
                 .then(response => response.json())
@@ -312,7 +324,8 @@
                     if (data.main && data.main.temp !== undefined) {
                         document.getElementById('ext-temp').innerText = data.main.temp.toFixed(1);
                     }
-                });
+                })
+                .catch(err => console.error("Temp Fetch Error:", err));
         }
 
         function updateClock() {
@@ -323,11 +336,14 @@
         updateClock();
 
         /* =========================================================
-           音声認識 ＆ 番号指定再生処理
+           強化版：音声認識 ＆ 番号判定処理
         ========================================================= */
         function initVoiceRecognition() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) return;
+            if (!SpeechRecognition) {
+                document.getElementById('voice-cmd').innerText = "NOT_SUPPORTED";
+                return;
+            }
 
             const recognition = new SpeechRecognition();
             recognition.lang = 'ja-JP';
@@ -337,40 +353,51 @@
             recognition.onresult = (event) => {
                 const lastIndex = event.results.length - 1;
                 const transcript = event.results[lastIndex][0].transcript.trim();
+                
+                // 認識されたテキストをリアルタイムで表示
                 document.getElementById('voice-cmd').innerText = `"${transcript}"`;
 
-                // 一時停止・再開コマンド
-                if (transcript.includes("止めて") || transcript.includes("ストップ") || transcript.includes("停止")) {
+                const text = transcript.toLowerCase();
+
+                // 停止・再生コマンド
+                if (text.includes("止めて") || text.includes("ストップ") || text.includes("停止") || text.includes("pause")) {
                     if (ytPlayer) ytPlayer.pauseVideo();
                     document.getElementById('bgm-status').innerText = "PAUSED";
                     return;
                 }
-                if (transcript.includes("再開") || transcript.includes("スタート")) {
+                if (text.includes("再開") || text.includes("スタート") || text.includes("play")) {
                     if (ytPlayer) ytPlayer.playVideo();
                     document.getElementById('bgm-status').innerText = "PLAYING";
                     return;
                 }
 
-                // 番号・曲名マッチング
-                if (transcript.includes("1") || transcript.includes("１") || transcript.includes("いち") || transcript.includes("ワンダーウォール")) {
+                // 表記の揺れ（漢字・ひらがな・数字・英語・曲名）をすべてカバー
+                if (/1|１|一|いち|イチ|ワン|wonderwall|ワンダーウォール/.test(text)) {
                     playTrack(1);
-                } else if (transcript.includes("2") || transcript.includes("２") || transcript.includes("に") || transcript.includes("ホワットエバー")) {
+                } else if (/2|２|二|に|ニ|ツー|whatever|ホワットエバー/.test(text)) {
                     playTrack(2);
-                } else if (transcript.includes("3") || transcript.includes("３") || transcript.includes("さん") || transcript.includes("ドントルックバック")) {
+                } else if (/3|３|三|さん|サン|スリー|don't|ドント/.test(text)) {
                     playTrack(3);
-                } else if (transcript.includes("4") || transcript.includes("４") || transcript.includes("よん") || transcript.includes("ライラ")) {
+                } else if (/4|４|四|よん|ヨン|フォー|lyla|ライラ/.test(text)) {
                     playTrack(4);
-                } else if (transcript.includes("5") || transcript.includes("５") || transcript.includes("ご") || transcript.includes("リトルバイリトル")) {
+                } else if (/5|５|五|ご|ゴ|ファイブ|little|リトル/.test(text)) {
                     playTrack(5);
                 }
             };
 
-            recognition.onend = () => { recognition.start(); };
+            recognition.onerror = (err) => {
+                console.error("Speech Error:", err);
+            };
+
+            recognition.onend = () => { 
+                recognition.start(); 
+            };
+
             recognition.start();
         }
 
         function playTrack(num) {
-            if (!ytPlayer || !playlist[num]) return;
+            if (!playlist[num]) return;
 
             // ハイライト表示の更新
             for (let i = 1; i <= 5; i++) {
@@ -381,7 +408,10 @@
             if (activeEl) activeEl.classList.add('active-track');
 
             document.getElementById('bgm-status').innerText = `PLAYING: #${num} ${playlist[num].title}`;
-            ytPlayer.loadVideoById(playlist[num].id);
+
+            if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
+                ytPlayer.loadVideoById(playlist[num].id);
+            }
         }
     </script>
 </body>
