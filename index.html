@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>UtilityOS TYPE-PROTO V2.8.9</title>
+    <title>UtilityOS TYPE-PROTO V3.0.0</title>
     <style>
         :root {
             --util-cyan: #00f2ff;
             --bg-black: rgba(0, 0, 0, 0.65);
-            --yt-red: #ff0000;
         }
 
         body, html {
@@ -61,27 +60,54 @@
             display: block;
         }
 
-        #reticle {
+        /* --- 動く照準（レティクル） --- */
+        #reticle-container {
             position: fixed;
-            top: 35%; left: 50%;
+            top: 45%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 140px; height: 140px;
-            border: 1px solid rgba(0, 242, 255, 0.2);
-            border-radius: 2px;
+            width: 180px; height: 180px;
             pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
+        .reticle-ring {
+            position: absolute;
+            width: 100%; height: 100%;
+            border: 1px dashed rgba(0, 242, 255, 0.4);
+            border-radius: 50%;
+            animation: rotateRing 12s linear infinite;
+        }
+
+        .reticle-core {
+            width: 80px; height: 80px;
+            border: 1px solid var(--util-cyan);
+            border-radius: 4px;
+            animation: pulseCore 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes rotateRing { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes pulseCore { 0% { opacity: 0.3; transform: scale(0.95); } 100% { opacity: 0.8; transform: scale(1.05); } }
+
+        /* --- 動くスキャンライン --- */
         .scan-line {
             position: fixed;
-            width: 100%; height: 2px;
-            background: rgba(0, 242, 255, 0.15);
+            width: 100%; height: 3px;
+            background: linear-gradient(90deg, transparent, var(--util-cyan), transparent);
+            box-shadow: 0 0 15px var(--util-cyan);
             top: 0;
-            animation: scan 4s linear infinite;
+            animation: scan 3.5s ease-in-out infinite;
             z-index: 5;
             pointer-events: none;
+            opacity: 0.7;
         }
 
-        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+        @keyframes scan {
+            0% { top: -5%; }
+            50% { top: 105%; }
+            100% { top: -5%; }
+        }
 
         #boot-screen {
             position: fixed;
@@ -96,97 +122,47 @@
             letter-spacing: 2px;
         }
 
-        .yt-block { border-left-color: var(--yt-red) !important; }
         .voice-active { color: #fff; font-weight: bold; background: rgba(0,242,255,0.3); padding: 2px 4px; }
-
-        .playlist-box {
-            text-align: left;
-            font-size: 11px;
-            line-height: 1.5;
-            margin-top: 6px;
-        }
-
-        .track-item {
-            cursor: pointer;
-            padding: 3px 6px;
-            margin: 2px 0;
-            border-radius: 2px;
-            transition: background 0.2s;
-        }
-
-        .track-item:hover {
-            background: rgba(0, 242, 255, 0.2);
-        }
-
-        .active-track {
-            color: #fff !important;
-            font-weight: bold;
-            background: rgba(0, 242, 255, 0.4) !important;
-            border-left: 3px solid var(--util-cyan);
-        }
-
-        #player-wrapper {
-            margin-top: 10px;
-            border: 1px solid var(--yt-red);
-            background: #000;
-            width: 240px;
-            height: 135px;
-            margin-left: auto;
-            margin-right: auto;
-            overflow: hidden;
-            box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
-        }
-
-        #yt-player {
-            width: 100%;
-            height: 100%;
-        }
     </style>
 </head>
 <body onclick="bootSystem()">
 
-    <div id="boot-screen">TOUCH TO INITIALIZE UtilityOS V2.8.9</div>
+    <div id="boot-screen">TOUCH TO INITIALIZE UtilityOS V3.0.0</div>
 
     <video id="camera-preview" autoplay playsinline></video>
     <div class="scan-line"></div>
 
     <div id="ui-layer">
+        <!-- 上部ヘッダー -->
         <div class="section">
             <div class="block">
                 <span class="title">SYSTEM_LOG</span>
                 <span id="system-status-text">KERNEL: STANDBY</span><br>
-                LINK: EARPODS_CONNECTED<br>
-                OS: UtilityOS_v2.8.9
+                BATTERY: <span id="battery-status" style="color: #fff;">--%</span><br>
+                OS: UtilityOS_v3.0.0
             </div>
             <div class="block">
-                <span class="title">TIMESTAMP</span>
+                <span class="title">TIMESTAMP & HEADING</span>
                 <div id="clock" style="font-size: 18px;">00:00:00</div>
-                SUZUKA_PROJECT_2026
+                DIR: <span id="heading-val" style="color: #fff; font-weight: bold;">---° --</span>
             </div>
         </div>
 
-        <div id="reticle"></div>
+        <!-- 動くグラフィック照準 -->
+        <div id="reticle-container">
+            <div class="reticle-ring"></div>
+            <div class="reticle-core"></div>
+        </div>
 
+        <!-- 中央：音声認識状態表示 -->
         <div class="section" style="justify-content: center;">
-            <div class="block yt-block" style="text-align: center; width: 300px;">
-                <span class="title" style="color: var(--yt-red);">OASIS_PLAYER_HUD</span>
-                RECOGNIZED: <span id="voice-cmd" class="voice-active">LISTENING...</span><br>
-                STATUS: <span id="bgm-status">TOUCH SCREEN TO START</span>
-                
-                <div id="player-wrapper">
-                    <div id="yt-player"></div>
-                </div>
-
-                <div class="playlist-box">
-                    <div id="track-1" class="track-item" onclick="playTrack(1)">1. Wonderwall</div>
-                    <div id="track-2" class="track-item" onclick="playTrack(2)">2. Whatever</div>
-                    <div id="track-3" class="track-item" onclick="playTrack(3)">3. Don't Look Back In Anger</div>
-                    <div id="track-4" class="track-item" onclick="playTrack(4)">4. Lyla</div>
-                    <div id="track-5" class="track-item" onclick="playTrack(5)">5. Little by Little</div>
-                </div>
+            <div class="block" style="text-align: center; min-width: 260px;">
+                <span class="title">VOICE_INPUT_MONITOR</span>
+                RECOGNIZED: <span id="voice-cmd" class="voice-active">LISTENING...</span>
             </div>
         </div>
 
+        <!-- 下部フッター -->
         <div class="section">
             <div class="block">
                 <span class="title">GEOLOCATION_DATA</span>
@@ -203,41 +179,12 @@
         </div>
     </div>
 
-    <script src="https://www.youtube.com/iframe_api"></script>
-
     <script>
         let audioContext;
         let isBooted = false;
-        let ytPlayer = null;
 
         const API_KEY = "d465f54b761e798103a827b981556cc7";
         let lastTempFetchTime = 0;
-
-        // 1番のIDを「dYauxAMwmzQ」へ更新
-        const playlist = {
-            1: { title: "Wonderwall", id: "dYauxAMwmzQ" },
-            2: { title: "Whatever", id: "CAE7c1sLInE" },
-            3: { title: "Don't Look Back In Anger", id: "r8OipmKFDeM" },
-            4: { title: "Lyla", id: "YICJplq1oEQ" },
-            5: { title: "Little by Little", id: "ic-A69L_L9Y" }
-        };
-
-        function onYouTubeIframeAPIReady() {
-            ytPlayer = new YT.Player('yt-player', {
-                height: '135',
-                width: '240',
-                videoId: playlist[1].id,
-                playerVars: {
-                    'playsinline': 1,
-                    'controls': 1
-                },
-                events: {
-                    'onReady': () => {
-                        document.getElementById('bgm-status').innerText = "READY: TOUCH SCREEN";
-                    }
-                }
-            });
-        }
 
         async function bootSystem() {
             if (isBooted) return;
@@ -251,16 +198,12 @@
                 await audioContext.resume();
             }
 
-            if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
-                ytPlayer.unMute();
-                ytPlayer.setVolume(100);
-                playTrack(1);
-            }
-
             initCamera();
             initSoundMonitor();
             updateLocation();
             initVoiceRecognition();
+            initBatteryMonitor();
+            initCompass();
         }
 
         async function initCamera() {
@@ -337,6 +280,42 @@
                 .catch(err => console.error("Temp Fetch Error:", err));
         }
 
+        /* 方位磁針（ジャイロ・コンパス）機能 */
+        function initCompass() {
+            if (window.DeviceOrientationEvent) {
+                window.addEventListener('deviceorientation', function(e) {
+                    let heading = e.alpha;
+                    if (e.webkitCompassHeading) {
+                        heading = e.webkitCompassHeading; // iOS用
+                    }
+                    if (heading !== null) {
+                        const deg = Math.round(heading);
+                        const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+                        const dir = dirs[Math.round(deg / 45) % 8];
+                        document.getElementById('heading-val').innerText = `${deg}° ${dir}`;
+                    }
+                }, true);
+            }
+        }
+
+        /* バッテリーモニター機能 */
+        function initBatteryMonitor() {
+            if (navigator.getBattery) {
+                navigator.getBattery().then(battery => {
+                    const updateBattery = () => {
+                        const level = Math.round(battery.level * 100);
+                        const charging = battery.charging ? " (CHG)" : "";
+                        document.getElementById('battery-status').innerText = `${level}%${charging}`;
+                    };
+                    updateBattery();
+                    battery.addEventListener('levelchange', updateBattery);
+                    battery.addEventListener('chargingchange', updateBattery);
+                });
+            } else {
+                document.getElementById('battery-status').innerText = "N/A";
+            }
+        }
+
         function updateClock() {
             const now = new Date();
             document.getElementById('clock').innerText = now.toTimeString().split(' ')[0];
@@ -360,55 +339,11 @@
                 const lastIndex = event.results.length - 1;
                 const transcript = event.results[lastIndex][0].transcript.trim();
                 document.getElementById('voice-cmd').innerText = `"${transcript}"`;
-
-                const text = transcript.toLowerCase();
-
-                if (text.includes("止めて") || text.includes("ストップ") || text.includes("停止") || text.includes("pause")) {
-                    if (ytPlayer) ytPlayer.pauseVideo();
-                    document.getElementById('bgm-status').innerText = "PAUSED";
-                    return;
-                }
-                if (text.includes("再開") || text.includes("スタート") || text.includes("play")) {
-                    if (ytPlayer) ytPlayer.playVideo();
-                    document.getElementById('bgm-status').innerText = "PLAYING";
-                    return;
-                }
-
-                if (/1|１|一|いち|イチ|ワン|wonderwall|ワンダーウォール/.test(text)) {
-                    playTrack(1);
-                } else if (/2|２|二|に|ニ|ツー|whatever|ホワットエバー/.test(text)) {
-                    playTrack(2);
-                } else if (/3|３|三|さん|サン|スリー|don't|ドント/.test(text)) {
-                    playTrack(3);
-                } else if (/4|４|四|よん|ヨン|フォー|lyla|ライラ/.test(text)) {
-                    playTrack(4);
-                } else if (/5|５|五|ご|ゴ|ファイブ|little|リトル/.test(text)) {
-                    playTrack(5);
-                }
             };
 
             recognition.onerror = (err) => { console.error("Speech Error:", err); };
             recognition.onend = () => { recognition.start(); };
             recognition.start();
-        }
-
-        function playTrack(num) {
-            if (!playlist[num]) return;
-
-            for (let i = 1; i <= 5; i++) {
-                const el = document.getElementById(`track-${i}`);
-                if (el) el.classList.remove('active-track');
-            }
-            const activeEl = document.getElementById(`track-${num}`);
-            if (activeEl) activeEl.classList.add('active-track');
-
-            document.getElementById('bgm-status').innerText = `PLAYING: #${num} ${playlist[num].title}`;
-
-            if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
-                ytPlayer.unMute();
-                ytPlayer.setVolume(100);
-                ytPlayer.loadVideoById(playlist[num].id);
-            }
         }
     </script>
 </body>
