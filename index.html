@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>UtilityOS TYPE-PROTO V2.8.7</title>
+    <title>UtilityOS TYPE-PROTO V2.8.8</title>
     <style>
         :root {
             --util-cyan: #00f2ff;
-            --bg-black: rgba(0, 0, 0, 0.6);
+            --bg-black: rgba(0, 0, 0, 0.65);
             --yt-red: #ff0000;
         }
 
@@ -37,7 +37,7 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 20px;
+            padding: 15px;
             box-sizing: border-box;
             pointer-events: none;
         }
@@ -47,10 +47,11 @@
         .block {
             background: var(--bg-black);
             border-left: 3px solid var(--util-cyan);
-            padding: 10px;
+            padding: 8px 12px;
             font-size: 11px;
             letter-spacing: 1px;
             pointer-events: auto;
+            backdrop-filter: blur(4px);
         }
 
         .title {
@@ -62,9 +63,9 @@
 
         #reticle {
             position: fixed;
-            top: 50%; left: 50%;
+            top: 35%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 160px; height: 160px;
+            width: 140px; height: 140px;
             border: 1px solid rgba(0, 242, 255, 0.2);
             border-radius: 2px;
             pointer-events: none;
@@ -73,7 +74,7 @@
         .scan-line {
             position: fixed;
             width: 100%; height: 2px;
-            background: rgba(0, 242, 255, 0.1);
+            background: rgba(0, 242, 255, 0.15);
             top: 0;
             animation: scan 4s linear infinite;
             z-index: 5;
@@ -92,6 +93,7 @@
             align-items: center;
             font-size: 14px;
             cursor: pointer;
+            letter-spacing: 2px;
         }
 
         .yt-block { border-left-color: var(--yt-red) !important; }
@@ -100,13 +102,13 @@
         .playlist-box {
             text-align: left;
             font-size: 11px;
-            line-height: 1.6;
-            margin-top: 8px;
+            line-height: 1.5;
+            margin-top: 6px;
         }
 
         .track-item {
             cursor: pointer;
-            padding: 2px 6px;
+            padding: 3px 6px;
             margin: 2px 0;
             border-radius: 2px;
             transition: background 0.2s;
@@ -123,34 +125,40 @@
             border-left: 3px solid var(--util-cyan);
         }
 
-        #youtube-player-container {
-            position: fixed;
-            bottom: 0; right: 0;
-            width: 1px; height: 1px;
-            opacity: 0.01;
-            pointer-events: none;
-            z-index: 0;
+        /* 可視化プレイヤーのスタイル */
+        #player-wrapper {
+            margin-top: 10px;
+            border: 1px solid var(--yt-red);
+            background: #000;
+            width: 240px;
+            height: 135px;
+            margin-left: auto;
+            margin-right: auto;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+        }
+
+        #yt-player {
+            width: 100%;
+            height: 100%;
         }
     </style>
 </head>
 <body onclick="bootSystem()">
 
-    <div id="boot-screen">TOUCH TO INITIALIZE UtilityOS V2.8.7</div>
+    <div id="boot-screen">TOUCH TO INITIALIZE UtilityOS V2.8.8</div>
 
     <video id="camera-preview" autoplay playsinline></video>
     <div class="scan-line"></div>
 
-    <div id="youtube-player-container">
-        <div id="yt-player"></div>
-    </div>
-
     <div id="ui-layer">
+        <!-- 上部ヘッダー -->
         <div class="section">
             <div class="block">
                 <span class="title">SYSTEM_LOG</span>
                 <span id="system-status-text">KERNEL: STANDBY</span><br>
                 LINK: EARPODS_CONNECTED<br>
-                OS: UtilityOS_v2.8.7
+                OS: UtilityOS_v2.8.8
             </div>
             <div class="block">
                 <span class="title">TIMESTAMP</span>
@@ -161,12 +169,18 @@
 
         <div id="reticle"></div>
 
+        <!-- 中央：プレイヤー ＆ トラックセレクター HUD -->
         <div class="section" style="justify-content: center;">
-            <div class="block yt-block" style="text-align: center; min-width: 320px;">
-                <span class="title" style="color: var(--yt-red);">OASIS_TRACK_SELECTOR</span>
+            <div class="block yt-block" style="text-align: center; width: 300px;">
+                <span class="title" style="color: var(--yt-red);">OASIS_PLAYER_HUD</span>
                 RECOGNIZED: <span id="voice-cmd" class="voice-active">LISTENING...</span><br>
-                STATUS: <span id="bgm-status">STANDBY</span>
+                STATUS: <span id="bgm-status">TOUCH SCREEN TO START</span>
                 
+                <!-- 可視化されたYouTube iframe -->
+                <div id="player-wrapper">
+                    <div id="yt-player"></div>
+                </div>
+
                 <div class="playlist-box">
                     <div id="track-1" class="track-item" onclick="playTrack(1)">1. Wonderwall</div>
                     <div id="track-2" class="track-item" onclick="playTrack(2)">2. Whatever</div>
@@ -177,6 +191,7 @@
             </div>
         </div>
 
+        <!-- 下部フッター -->
         <div class="section">
             <div class="block">
                 <span class="title">GEOLOCATION_DATA</span>
@@ -213,16 +228,16 @@
 
         function onYouTubeIframeAPIReady() {
             ytPlayer = new YT.Player('yt-player', {
-                height: '200',
-                width: '200',
+                height: '135',
+                width: '240',
                 videoId: playlist[1].id,
                 playerVars: {
                     'playsinline': 1,
-                    'controls': 0
+                    'controls': 1 // コントロールを表示して手動操作も可能に
                 },
                 events: {
                     'onReady': () => {
-                        document.getElementById('bgm-status').innerText = "TOUCH SCREEN TO START";
+                        document.getElementById('bgm-status').innerText = "READY: TOUCH SCREEN";
                     }
                 }
             });
@@ -240,11 +255,11 @@
                 await audioContext.resume();
             }
 
-            // ★重要：画面タップ時にYouTubeプレイヤーを直接「再生＆アンミュート」させてロック解除する
+            // 初回タップでアンミュート・音量100＆自動再生開始
             if (ytPlayer && typeof ytPlayer.playVideo === 'function') {
                 ytPlayer.unMute();
                 ytPlayer.setVolume(100);
-                playTrack(1); // 起動と同時に自動で1曲目（Wonderwall）を開始！
+                playTrack(1);
             }
 
             initCamera();
@@ -382,7 +397,6 @@
             recognition.start();
         }
 
-        // ★再生処理の強化（消音解除＋音量100の強制実行）
         function playTrack(num) {
             if (!playlist[num]) return;
 
