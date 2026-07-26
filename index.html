@@ -1108,3 +1108,243 @@ document
 .getElementById("boot")
 .onclick=bootSystem;
 
+/*==========================================================
+Camera
+==========================================================*/
+
+let cameraStream=null;
+
+async function initCamera(){
+
+try{
+
+cameraStream=
+await navigator.mediaDevices.getUserMedia({
+
+video:{
+facingMode:"environment"
+},
+
+audio:false
+
+});
+
+document
+.getElementById("camera")
+.srcObject=cameraStream;
+
+document
+.getElementById("camStatus")
+.innerHTML="✔";
+addMemory("Camera Ready");
+
+}catch(e){
+
+document
+.getElementById("camStatus")
+.className="statusNG";
+
+document
+.getElementById("camStatus")
+.innerHTML="✖";
+
+addMemory("Camera Error");
+
+}
+
+}
+
+/*==========================================================
+Microphone
+==========================================================*/
+
+let audioContext;
+let analyser;
+
+async function initMicrophone(){
+
+try{
+
+const stream=
+await navigator.mediaDevices.getUserMedia({
+
+audio:true
+
+});
+
+audioContext=
+new(window.AudioContext||
+window.webkitAudioContext)();
+
+const source=
+audioContext.createMediaStreamSource(stream);
+
+analyser=
+audioContext.createAnalyser();
+
+analyser.fftSize=64;
+
+source.connect(analyser);
+
+drawWave();
+
+addMemory("Microphone Ready");
+
+}catch(e){
+
+document
+.getElementById("micStatus")
+.className="statusNG";
+
+document
+.getElementById("micStatus")
+.innerHTML="✖";
+
+addMemory("Microphone Error");
+
+}
+
+}
+
+function drawWave(){
+
+const canvas=
+document.getElementById("wave");
+
+const ctx=
+canvas.getContext("2d");
+
+canvas.width=canvas.clientWidth;
+canvas.height=canvas.clientHeight;
+
+const data=
+new Uint8Array(analyser.frequencyBinCount);
+
+function render(){
+
+requestAnimationFrame(render);
+
+analyser.getByteFrequencyData(data);
+
+ctx.clearRect(0,0,
+canvas.width,
+canvas.height);
+
+const w=
+canvas.width/data.length;
+
+for(let i=0;i<data.length;i++){
+
+const h=
+(data[i]/255)
+*canvas.height;
+
+ctx.fillStyle="#00F2FF";
+
+ctx.fillRect(
+
+i*w,
+
+canvas.height-h,
+
+w-1,
+
+h
+
+);
+
+}
+
+}
+
+render();
+
+}
+
+/*==========================================================
+Voice Log
+==========================================================*/
+
+function addVoice(text){
+
+voiceLogs.unshift(text);
+
+if(voiceLogs.length>8){
+
+voiceLogs.pop();
+
+}
+
+document
+.getElementById("voiceLog")
+.innerHTML=
+
+voiceLogs.join("<br>");
+
+}
+
+/*==========================================================
+Speech Recognition
+==========================================================*/
+
+function initVoice(){
+
+const SR=
+
+window.SpeechRecognition||
+
+window.webkitSpeechRecognition;
+
+if(!SR){
+
+document
+.getElementById("voiceStatus")
+.className="statusNG";
+
+document
+.getElementById("voiceStatus")
+.innerHTML="✖";
+
+return;
+
+}
+
+const rec=new SR();
+
+rec.lang="ja-JP";
+
+rec.continuous=true;
+
+rec.interimResults=false;
+
+rec.onresult=(e)=>{
+
+const text=
+
+e.results[
+e.results.length-1
+][0].transcript;
+
+document
+.getElementById("voiceText")
+.innerHTML=text;
+
+addVoice(text);
+
+addMemory("Voice : "+text);
+
+voiceCommand(text);
+
+};
+
+rec.onend=()=>{
+
+rec.start();
+
+};
+
+rec.start();
+
+addMemory("Voice Ready");
+
+}
