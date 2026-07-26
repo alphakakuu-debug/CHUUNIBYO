@@ -1348,3 +1348,197 @@ rec.start();
 addMemory("Voice Ready");
 
 }
+
+/*==========================================================
+Speech Synthesis
+==========================================================*/
+
+function speak(text){
+
+if(!("speechSynthesis" in window))
+return;
+
+const msg=
+new SpeechSynthesisUtterance();
+
+msg.lang="ja-JP";
+
+msg.text=text;
+
+msg.rate=1.0;
+
+msg.pitch=1.0;
+
+speechSynthesis.cancel();
+speechSynthesis.speak(msg);
+
+}
+
+/*==========================================================
+Voice Commands
+==========================================================*/
+
+function voiceCommand(text){
+
+text=text.trim();
+
+if(text.includes("ユーティリティモード")){
+
+currentMode="UTILITY";
+
+document
+.getElementById("mode")
+.innerHTML="UTILITY";
+
+notify("UTILITY MODE");
+
+addMemory("Mode Utility");
+
+speak("ユーティリティモード");
+
+}
+
+if(text.includes("イマージョンモード")){
+
+currentMode="IMMERSION";
+
+document
+.getElementById("mode")
+.innerHTML="IMMERSION";
+
+notify("IMMERSION MODE");
+
+addMemory("Mode Immersion");
+
+speak("イマージョンモード");
+
+}
+
+if(text.includes("ステータス")){
+
+notify("STATUS OK");
+
+speak("システム正常");
+
+}
+
+if(text.includes("ログ消去")){
+
+voiceLogs=[];
+
+document
+.getElementById("voiceLog")
+.innerHTML="";
+
+notify("VOICE LOG CLEARED");
+
+addMemory("Voice Log Cleared");
+
+}
+
+}
+
+/*==========================================================
+Boot Sound
+==========================================================*/
+
+function bootBeep(){
+
+try{
+
+const ctx=
+new(window.AudioContext||
+window.webkitAudioContext)();
+
+const osc=
+ctx.createOscillator();
+
+const gain=
+ctx.createGain();
+
+osc.type="sine";
+
+osc.frequency.value=880;
+
+gain.gain.value=0.05;
+
+osc.connect(gain);
+
+gain.connect(ctx.destination);
+
+osc.start();
+
+osc.stop(ctx.currentTime+0.15);
+
+}catch(e){}
+
+}
+
+/*==========================================================
+Boot Finish
+==========================================================*/
+
+async function startSystem(){
+
+bootBeep();
+
+await initCamera();
+
+await initMicrophone();
+
+initVoice();
+
+notify("SYSTEM ONLINE");
+
+addMemory("UtilityOS Ready");
+
+speak("システム起動");
+
+}
+
+/*==========================================================
+Boot Override
+==========================================================*/
+
+async function bootSystem(){
+
+sessionStart=Date.now();
+
+addMemory("Boot sequence started");
+
+const fill=
+document.getElementById("bootFill");
+
+for(let i=0;i<=100;i++){
+
+fill.style.width=i+"%";
+
+await new Promise(r=>setTimeout(r,18));
+
+}
+
+document
+.getElementById("boot")
+.style.display="none";
+
+await startSystem();
+
+}
+
+/*==========================================================
+Auto Clock
+==========================================================*/
+
+updateClock();
+
+setInterval(updateClock,1000);
+
+/*==========================================================
+End Part1
+==========================================================*/
+
+</script>
+
+</body>
+
+</html>
