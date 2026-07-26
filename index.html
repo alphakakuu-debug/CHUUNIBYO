@@ -746,3 +746,365 @@ SESSION
 </div>
 
 </div>
+
+<!-- ================= BOTTOM ================= -->
+
+<div class="row">
+
+<div
+class="panel"
+id="memoryPanel">
+
+<span class="title">
+
+SYSTEM MEMORY
+
+</span>
+
+<div
+class="log"
+id="memoryLog">
+
+[BOOT]
+
+Preparing UtilityOS...
+
+</div>
+
+</div>
+
+<div
+class="panel"
+id="gpsPanel">
+
+<span class="title">
+
+LOCATION
+
+</span>
+
+LAT
+
+<span id="lat">
+
+---
+
+</span>
+
+<br>
+
+LON
+
+<span id="lon">
+
+---
+
+</span>
+
+<br>
+
+ALT
+
+<span id="alt">
+
+---
+
+</span>
+
+m
+
+<br><br>
+
+<span class="title">
+
+WEATHER
+
+</span>
+
+TEMP
+
+<span id="temp">
+
+--
+
+</span>
+
+°C
+
+<br>
+
+<span id="weather">
+
+Loading...
+
+</span>
+
+</div>
+
+<div
+class="panel"
+id="sensorPanel">
+
+<span class="title">
+
+SENSORS
+
+</span>
+
+HEADING
+
+<span id="heading">
+
+---
+
+</span>
+
+°
+
+<br>
+
+PITCH
+
+<span id="pitch">
+
+0
+
+</span>
+
+°
+
+<br>
+
+ROLL
+
+<span id="roll">
+
+0
+
+</span>
+
+°
+
+<br>
+
+LIGHT
+
+<span id="light">
+
+--
+
+</span>
+
+%
+
+<br>
+
+FPS
+
+<span id="fps">
+
+--
+
+</span>
+
+</div>
+
+<div
+class="panel"
+id="systemPanel">
+
+<span class="title">
+
+SYSTEM
+
+</span>
+
+MODE
+
+<div
+class="mode"
+id="mode">
+
+UTILITY
+
+</div>
+
+<br>
+
+BUILD
+
+<div>
+
+0001
+
+</div>
+
+<br>
+
+VERSION
+
+<div>
+
+V5.0 FINAL
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<div id="footer">
+
+ADAM UtilityOS V5.0 FINAL
+Build0001
+|
+Project ADAM
+|
+Codename GENESIS
+
+</div>
+
+<script>
+
+/*==========================================================
+UtilityOS V5
+JavaScript
+==========================================================*/
+
+const VERSION="5.0 FINAL";
+const BUILD="0001";
+const CODENAME="GENESIS";
+
+let sessionStart=null;
+
+let memoryLogs=[];
+
+let voiceLogs=[];
+
+let currentMode="UTILITY";
+
+function addMemory(text){
+
+const now=new Date();
+
+const t=
+now.toLocaleTimeString();
+
+memoryLogs.unshift(
+
+`[${t}] ${text}`
+
+);
+
+if(memoryLogs.length>10){
+
+memoryLogs.pop();
+
+}
+
+document
+.getElementById("memoryLog")
+.innerHTML=
+
+memoryLogs.join("<br>");
+
+}
+
+function notify(text){
+
+const n=
+
+document
+.getElementById("notify");
+
+n.innerHTML=text;
+
+n.style.display="block";
+
+setTimeout(()=>{
+
+n.style.display="none";
+
+},2500);
+
+}
+
+function updateClock(){
+
+const now=new Date();
+
+document
+.getElementById("clock")
+.innerHTML=
+
+now.toLocaleTimeString();
+
+if(sessionStart){
+
+const sec=
+
+Math.floor(
+
+(Date.now()-sessionStart)/1000
+
+);
+
+const m=
+
+String(Math.floor(sec/60))
+.padStart(2,"0");
+
+const s=
+
+String(sec%60)
+.padStart(2,"0");
+
+document
+.getElementById("session")
+.innerHTML=
+
+"SESSION "+m+":"+s;
+
+}
+
+}
+
+setInterval(updateClock,1000);
+
+updateClock();
+
+async function bootSystem(){
+
+sessionStart=Date.now();
+
+addMemory("Boot sequence started");
+
+const fill=
+
+document
+.getElementById("bootFill");
+
+for(let i=0;i<=100;i++){
+
+fill.style.width=i+"%";
+
+await new Promise(r=>setTimeout(r,18));
+
+}
+
+document
+.getElementById("boot")
+.style.display="none";
+
+notify("SYSTEM ONLINE");
+
+addMemory("SYSTEM READY");
+
+}
+
+document
+.getElementById("boot")
+.onclick=bootSystem;
+
