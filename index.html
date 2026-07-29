@@ -1,12 +1,3 @@
-<!-- ========================================================= -->
-<!-- UtilityOS V5.0 FINAL                                     -->
-<!-- Project : ADAM                                            -->
-<!-- Model   : Adam Utility V1                                 -->
-<!-- Build   : 0001                                             -->
-<!-- Codename : GENESIS                                         -->
-<!-- Part 1-1                                                   -->
-<!-- ========================================================= -->
-
 <!DOCTYPE html>
 <html lang="ja">
 
@@ -14,1531 +5,1166 @@
 
 <meta charset="UTF-8">
 
-<meta name="viewport"
-content="width=device-width,
-initial-scale=1.0,
-maximum-scale=1.0,
-user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>
-ADAM UtilityOS V5.0 FINAL
-</title>
+<title>Adam UtilityOS Verβ1.0</title>
+
 
 <style>
 
-/*==========================================================
-    ADAM UtilityOS
-    Theme
-==========================================================*/
+/* =========================
+   Adam UtilityOS β1.0
+   HUD CSS
+========================= */
 
-:root{
 
---cyan:#00F2FF;
---cyan2:#00D0DD;
+* {
+    box-sizing:border-box;
+}
 
---bg:rgba(0,0,0,.70);
---bg2:rgba(0,0,0,.45);
 
---white:#ffffff;
---red:#ff4040;
---yellow:#ffd84d;
---green:#40ff7b;
+body {
 
---radius:10px;
+    margin:0;
 
---border:
-1px solid rgba(0,242,255,.25);
+    background:#000;
+
+    color:#00ffff;
+
+    font-family:
+    "Courier New",
+    monospace;
+
+    overflow:hidden;
 
 }
 
-/*==========================================================
-    Body
-==========================================================*/
 
-html,
-body{
+/* BOOT */
 
-margin:0;
-padding:0;
+#boot {
 
-width:100%;
-height:100%;
+    position:fixed;
 
-overflow:hidden;
+    width:100vw;
 
-background:#000;
+    height:100vh;
 
-color:var(--cyan);
+    background:#000;
 
-font-family:
-"Courier New",
-monospace;
+    display:flex;
 
-}
+    justify-content:center;
 
-/*==========================================================
-    Camera
-==========================================================*/
+    align-items:center;
 
-#camera{
+    text-align:center;
 
-position:fixed;
+    font-size:24px;
 
-left:0;
-top:0;
-
-width:100%;
-height:100%;
-
-object-fit:cover;
-
-z-index:1;
-
-background:#000;
+    z-index:10;
 
 }
 
-/*==========================================================
-    HUD
-==========================================================*/
 
-#hud{
 
-position:fixed;
+.boot-line {
 
-left:0;
-top:0;
-
-width:100%;
-height:100%;
-
-z-index:20;
-
-padding:15px;
-
-box-sizing:border-box;
-
-display:flex;
-
-flex-direction:column;
-
-justify-content:space-between;
-
-pointer-events:none;
+    margin:10px;
 
 }
 
-/*==========================================================
-    Row
-==========================================================*/
 
-.row{
 
-display:flex;
 
-justify-content:space-between;
 
-align-items:flex-start;
+/* MAIN HUD */
 
-gap:12px;
+#hud {
 
-}
+    width:100vw;
 
-/*==========================================================
-    Panel
-==========================================================*/
+    height:100vh;
 
-.panel{
-
-background:var(--bg);
-
-border:var(--border);
-
-border-left:
-
-3px solid var(--cyan);
-
-border-radius:
-
-var(--radius);
-
-backdrop-filter:
-
-blur(8px);
-
-padding:
-
-10px;
-
-box-sizing:border-box;
-
-pointer-events:auto;
+    display:none;
 
 }
 
-/*==========================================================
-    Title
-==========================================================*/
 
-.title{
 
-font-size:10px;
 
-letter-spacing:2px;
 
-color:
+/* HEADER */
 
-rgba(0,242,255,.75);
+.header {
 
-margin-bottom:6px;
 
-display:block;
+    height:10%;
 
-}
+    display:flex;
 
-/*==========================================================
-    Boot Screen
-==========================================================*/
+    justify-content:space-between;
 
-#boot{
+    align-items:center;
 
-position:fixed;
 
-left:0;
-top:0;
+    padding:0 30px;
 
-width:100%;
-height:100%;
 
-background:#000;
+    border-bottom:
 
-z-index:9999;
+    1px solid #00ffff;
 
-display:flex;
 
-justify-content:center;
+    font-size:20px;
 
-align-items:center;
-
-flex-direction:column;
-
-cursor:pointer;
 
 }
 
-#bootTitle{
 
-font-size:34px;
 
-font-weight:bold;
 
-letter-spacing:5px;
 
-color:var(--cyan);
+/* ENVIRONMENT */
 
-margin-bottom:20px;
+#environment {
 
-}
 
-#bootSub{
+    height:12%;
 
-font-size:14px;
 
-opacity:.8;
+    padding:10px 30px;
 
-letter-spacing:2px;
 
-}
+    border-bottom:
 
-#bootBuild{
+    1px solid #00ffff;
 
-margin-top:15px;
 
-font-size:11px;
+    font-size:18px;
 
-opacity:.6;
 
 }
 
-/*==========================================================
-    Boot Progress
-==========================================================*/
 
-#bootBar{
 
-margin-top:35px;
 
-width:280px;
 
-height:10px;
+.env-value {
 
-border:
 
-1px solid var(--cyan);
+    margin-top:5px;
 
 }
 
-#bootFill{
 
-width:0%;
 
-height:100%;
+/* CAMERA */
 
-background:var(--cyan);
+#camera {
 
-transition:.2s;
 
-}
+    position:relative;
 
-/*==========================================================
-    Crosshair
-==========================================================*/
 
-#crosshair{
+    margin:20px;
 
-position:fixed;
 
-left:50%;
-top:50%;
+    height:45%;
 
-width:28px;
-height:28px;
 
-transform:
-translate(-50%,-50%);
+    border:
 
-pointer-events:none;
+    2px solid #00ffff;
 
-z-index:50;
 
-}
+    display:flex;
 
-#crosshair::before,
-#crosshair::after{
 
-content:"";
+    justify-content:center;
 
-position:absolute;
 
-background:
+    align-items:center;
 
-rgba(0,242,255,.45);
+
+    font-size:30px;
+
 
 }
 
-#crosshair::before{
 
-width:28px;
-height:2px;
 
-top:13px;
-left:0;
 
-}
 
-#crosshair::after{
+.camera-label {
 
-width:2px;
-height:28px;
 
-left:13px;
-top:0;
+    position:absolute;
 
-}
 
-/*==========================================================
-    Notification
-==========================================================*/
+    top:10px;
 
-#notify{
 
-position:fixed;
+    left:15px;
 
-top:20px;
 
-left:50%;
+    font-size:16px;
 
-transform:
-translateX(-50%);
-
-padding:
-8px 18px;
-
-background:
-
-rgba(0,0,0,.75);
-
-border:
-
-1px solid var(--cyan);
-
-border-radius:
-
-20px;
-
-font-size:12px;
-
-display:none;
-
-z-index:100;
-
-}
-/*==========================================================
-    STATUS
-==========================================================*/
-
-.statusOK{
-color:var(--green);
-font-weight:bold;
-}
-
-.statusNG{
-color:var(--red);
-font-weight:bold;
-}
-
-.statusWARN{
-color:var(--yellow);
-font-weight:bold;
-}
-
-/*==========================================================
-    Layout Width
-==========================================================*/
-
-#voicePanel{
-width:300px;
-min-height:220px;
-}
-
-#statusPanel{
-width:240px;
-}
-
-#memoryPanel{
-width:300px;
-min-height:170px;
-}
-
-#gpsPanel{
-width:220px;
-}
-
-#sensorPanel{
-width:240px;
-}
-
-#systemPanel{
-width:260px;
-}
-
-/*==========================================================
-    Clock
-==========================================================*/
-
-#clock{
-
-font-size:26px;
-
-font-weight:bold;
-
-color:white;
 
 }
 
-#session{
 
-font-size:13px;
 
-margin-top:6px;
 
-}
 
-/*==========================================================
-    Voice Wave
-==========================================================*/
+/* MODULE */
 
-#wave{
+#modules {
 
-width:100%;
 
-height:42px;
+    position:absolute;
 
-background:
 
-rgba(255,255,255,.03);
+    right:30px;
 
-border:
 
-1px solid rgba(0,242,255,.25);
+    bottom:110px;
 
-margin-top:8px;
+
+    font-size:15px;
+
 
 }
 
-/*==========================================================
-    Logs
-==========================================================*/
 
-.log{
 
-font-size:11px;
 
-line-height:1.5;
 
-color:white;
+/* VOICE */
 
-max-height:120px;
+#voice {
 
-overflow:hidden;
 
-}
+    position:absolute;
 
-/*==========================================================
-    Footer
-==========================================================*/
 
-#footer{
+    left:30px;
 
-position:fixed;
 
-bottom:8px;
+    bottom:20px;
 
-left:50%;
 
-transform:translateX(-50%);
+    width:80%;
 
-font-size:10px;
 
-opacity:.55;
+    border-top:
 
-letter-spacing:2px;
+    1px solid #00ffff;
 
-z-index:100;
+
+    padding-top:10px;
+
 
 }
 
-/*==========================================================
-    MODE
-==========================================================*/
 
-.mode{
 
-font-size:18px;
 
-font-weight:bold;
 
-color:white;
+/* AUDIO WAVE */
+
+#wave {
+
+
+    display:flex;
+
+
+    align-items:center;
+
+
+    height:40px;
+
+
+    gap:5px;
+
 
 }
 
-/*==========================================================
-    END CSS
-==========================================================*/
+
+
+.bar {
+
+
+    width:4px;
+
+
+    height:10px;
+
+
+    background:#00ffff;
+
+
+}
+
+
+
+/* HELP */
+
+#help {
+
+
+    position:fixed;
+
+
+    top:20%;
+
+
+    left:20%;
+
+
+    width:60%;
+
+
+    padding:20px;
+
+
+    background:#000;
+
+
+    border:
+
+    2px solid #00ffff;
+
+
+    display:none;
+
+
+    z-index:5;
+
+
+}
+
+
+
+
+
+/* SHUTDOWN */
+
+#shutdown {
+
+
+    position:fixed;
+
+
+    width:100vw;
+
+
+    height:100vh;
+
+
+    background:#000;
+
+
+    display:none;
+
+
+    justify-content:center;
+
+
+    align-items:center;
+
+
+    text-align:center;
+
+
+    font-size:25px;
+
+
+    z-index:20;
+
+
+}
+
+
+
+.hidden {
+
+    display:none!important;
+
+}
+
+
 
 </style>
 
+
 </head>
+
 
 <body>
 
-<!-- ===================================================== -->
-<!-- Boot Screen -->
-<!-- ===================================================== -->
+
+<!-- =====================
+     BOOT SYSTEM
+===================== -->
 
 <div id="boot">
 
-<div id="bootTitle">
+    <div>
 
-ADAM
+        <div class="boot-line">
+            ADAM
+        </div>
 
-</div>
+        <div class="boot-line">
+            UtilityOS Verβ1.0
+        </div>
 
-<div id="bootSub">
+        <br>
 
-UtilityOS V5.0 FINAL
+        <div>
+            INITIALIZING...
+        </div>
 
-</div>
-
-<div id="bootBuild">
-
-Build0001
-<br>
-Codename : GENESIS
-
-</div>
-
-<div id="bootBar">
-
-<div id="bootFill"></div>
+    </div>
 
 </div>
 
-</div>
 
-<!-- ===================================================== -->
-<!-- Camera -->
-<!-- ===================================================== -->
 
-<video
 
-id="camera"
-
-autoplay
-
-playsinline>
-
-</video>
-
-<!-- ===================================================== -->
-<!-- Crosshair -->
-<!-- ===================================================== -->
-
-<div id="crosshair"></div>
-
-<!-- ===================================================== -->
-<!-- Notification -->
-<!-- ===================================================== -->
-
-<div id="notify">
-
-SYSTEM READY
-
-</div>
-
-<!-- ===================================================== -->
-<!-- HUD -->
-<!-- ===================================================== -->
+<!-- =====================
+     HUD
+===================== -->
 
 <div id="hud">
 
-<!-- ================= TOP ================= -->
 
-<div class="row">
+<div class="header">
 
-<div
-class="panel"
-id="voicePanel">
+    <div>
+        ADAM
+    </div>
 
-<span class="title">
-
-VOICE
-
-</span>
-
-<div id="voiceText">
-
-LISTENING...
+    <div>
+        UtilityOS Verβ1.0
+    </div>
 
 </div>
 
-<canvas id="wave"></canvas>
 
-<br>
 
-<span class="title">
 
-VOICE LOG
+<!-- ENVIRONMENT -->
 
-</span>
+<div id="environment">
 
-<div
-class="log"
-id="voiceLog">
+    ENVIRONMENT
 
-No Logs...
+    <div class="env-value">
+
+        TEMP :
+        <span id="temp">
+        --
+        </span>
+        ℃
+
+        /
+
+        HUM :
+        <span id="humidity">
+        --
+        </span>
+        %
+
+    </div>
 
 </div>
 
+
+
+
+
+<!-- CAMERA -->
+
+<div id="camera">
+
+    <div class="camera-label">
+
+        CAM-01
+
+    </div>
+
+
+    VISION
+
+
 </div>
 
-<div
-class="panel"
-id="statusPanel">
 
-<span class="title">
 
-STATUS
 
-</span>
 
-CAMERA
-<span
-class="statusOK"
-id="camStatus">
+<!-- MODULE -->
 
-✔
+<div id="modules">
 
-</span>
-
-<br>
-
-MIC
-<span
-class="statusOK"
-id="micStatus">
-
-✔
-
-</span>
-
-<br>
-
-VOICE
-<span
-class="statusOK"
-id="voiceStatus">
-
-✔
-
-</span>
-
-<br>
-
-GPS
-<span
-class="statusWARN"
-id="gpsStatus">
-
-...
-
-</span>
-
-<br>
-
-NETWORK
-<span
-class="statusWARN"
-id="netStatus">
-
-...
-
-</span>
-
-<br>
-
-PING
-
-<span id="ping">
-
---
-
-</span>
-
-ms
+MODULE
 
 <br><br>
 
-<div id="clock">
-
-00:00:00
-
-</div>
-
-<div id="session">
-
-SESSION
-
-00:00
-
-</div>
-
-</div>
-
-</div>
-
-<!-- ================= BOTTOM ================= -->
-
-<div class="row">
-
-<div
-class="panel"
-id="memoryPanel">
-
-<span class="title">
-
-SYSTEM MEMORY
-
-</span>
-
-<div
-class="log"
-id="memoryLog">
-
-[BOOT]
-
-Preparing UtilityOS...
-
-</div>
-
-</div>
-
-<div
-class="panel"
-id="gpsPanel">
-
-<span class="title">
-
-LOCATION
-
-</span>
-
-LAT
-
-<span id="lat">
-
----
-
-</span>
+CAM-01 : READY
 
 <br>
 
-LON
-
-<span id="lon">
-
----
-
-</span>
+ENV-01 : READY
 
 <br>
 
-ALT
+AUD-01 : READY
 
-<span id="alt">
+<br>
 
----
+SYS-01 : READY
 
-</span>
+</div>
 
-m
+
+
+
+
+
+<!-- VOICE -->
+
+<div id="voice">
+
+
+VOICE_INPUT_MONITOR
+
+
+<div id="wave">
+
+</div>
+
+
+</div>
+
+
+
+
+</div>
+
+
+
+
+
+
+
+<!-- HELP WINDOW -->
+
+<div id="help">
+
+
+ADAM COMMAND LIST
 
 <br><br>
 
-<span class="title">
 
-WEATHER
-
-</span>
-
-TEMP
-
-<span id="temp">
-
---
-
-</span>
-
-°C
+UM
 
 <br>
+Utility Mode
 
-<span id="weather">
+<br><br>
 
-Loading...
 
-</span>
-
-</div>
-
-<div
-class="panel"
-id="sensorPanel">
-
-<span class="title">
-
-SENSORS
-
-</span>
-
-HEADING
-
-<span id="heading">
-
----
-
-</span>
-
-°
+IM
 
 <br>
+Immersion Mode
 
-PITCH
+<br><br>
 
-<span id="pitch">
 
-0
-
-</span>
-
-°
+HELP
 
 <br>
+Command List
 
-ROLL
+<br><br>
 
-<span id="roll">
 
-0
-
-</span>
-
-°
+END
 
 <br>
+Shutdown
 
-LIGHT
-
-<span id="light">
-
---
-
-</span>
-
-%
-
-<br>
-
-FPS
-
-<span id="fps">
-
---
-
-</span>
 
 </div>
 
-<div
-class="panel"
-id="systemPanel">
 
-<span class="title">
 
-SYSTEM
 
-</span>
 
-MODE
 
-<div
-class="mode"
-id="mode">
 
-UTILITY
+<!-- SHUTDOWN -->
 
-</div>
+<div id="shutdown">
 
-<br>
+    <div>
 
-BUILD
+        ADAM
 
-<div>
+        <br><br>
 
-0001
+        UTILITYOS
+
+        <br><br>
+
+        SHUTDOWN COMPLETE
+
+
+    </div>
 
 </div>
 
-<br>
 
-VERSION
 
-<div>
 
-V5.0 FINAL
 
-</div>
 
-</div>
 
-</div>
-
-</div>
-
-<div id="footer">
-
-ADAM UtilityOS V5.0 FINAL
-Build0001
-|
-Project ADAM
-|
-Codename GENESIS
-
-</div>
 
 <script>
 
-/*==========================================================
-UtilityOS V5
-JavaScript
-==========================================================*/
 
-const VERSION="5.0 FINAL";
-const BUILD="0001";
-const CODENAME="GENESIS";
+/* =====================
+   BOOT SYSTEM
+===================== */
 
-let sessionStart=null;
 
-let memoryLogs=[];
+window.onload = ()=>{
 
-let voiceLogs=[];
 
-let currentMode="UTILITY";
+    setTimeout(()=>{
 
-function addMemory(text){
 
-const now=new Date();
+        document.getElementById("boot")
+        .style.display="none";
 
-const t=
-now.toLocaleTimeString();
 
-memoryLogs.unshift(
+        document.getElementById("hud")
+        .style.display="block";
 
-`[${t}] ${text}`
 
+
+    },3000);
+
+
+};
+
+
+
+
+
+
+
+/* =====================
+   MODE SYSTEM
+===================== */
+
+
+let mode="UM";
+
+
+
+function setMode(newMode){
+
+
+    mode=newMode;
+
+
+
+    if(mode==="UM"){
+
+
+        document
+        .getElementById("hud")
+        .style.display="block";
+
+
+    }
+
+
+
+    if(mode==="IM"){
+
+
+        document
+        .getElementById("hud")
+        .style.display="none";
+
+
+    }
+
+
+}
+
+
+
+
+
+
+
+
+/* =====================
+   HELP SYSTEM
+===================== */
+
+
+function showHelp(){
+
+
+    let help=
+    document.getElementById("help");
+
+
+    help.style.display="block";
+
+
+
+    setTimeout(()=>{
+
+
+        help.style.display="none";
+
+
+    },5000);
+
+
+
+}
+
+
+
+
+
+
+
+
+/* =====================
+   SHUTDOWN SYSTEM
+===================== */
+
+
+function shutdown(){
+
+
+    document
+    .getElementById("hud")
+    .style.display="none";
+
+
+
+    document
+    .getElementById("shutdown")
+    .style.display="flex";
+
+
+}
+
+
+
+
+
+
+
+
+/* =====================
+   COMMAND TEST
+===================== */
+
+
+document.addEventListener(
+"keydown",
+
+(e)=>{
+
+
+    let command=
+    e.key.toUpperCase();
+
+
+
+    if(command==="U"){
+
+        setMode("UM");
+
+    }
+
+
+
+    if(command==="I"){
+
+        setMode("IM");
+
+    }
+
+
+
+    if(command==="H"){
+
+        showHelp();
+
+    }
+
+
+
+    if(command==="E"){
+
+        shutdown();
+
+    }
+
+
+
+});
+
+
+
+// =====================
+// CAM-01 CAMERA SYSTEM
+// =====================
+
+
+let cameraStream = null;
+
+
+async function startCamera(){
+
+
+    try{
+
+
+        cameraStream =
+        await navigator.mediaDevices.getUserMedia({
+
+            video:true,
+
+            audio:false
+
+        });
+
+
+
+        console.log(
+        "CAM-01 ONLINE"
+        );
+
+
+
+    }catch(error){
+
+
+        console.log(
+        "CAM-01 ERROR",
+        error
+        );
+
+
+    }
+
+
+}
+
+
+
+
+
+// =====================
+// ENV-01 ENVIRONMENT
+// =====================
+
+
+// β1.0 仮データ
+// 後でOpenWeatherMap接続
+
+
+function updateEnvironment(){
+
+
+    let temp =
+    27;
+
+
+    let humidity =
+    60;
+
+
+
+    document
+    .getElementById("temp")
+    .innerHTML=temp;
+
+
+
+    document
+    .getElementById("humidity")
+    .innerHTML=humidity;
+
+
+}
+
+
+
+updateEnvironment();
+
+
+
+
+
+
+
+
+
+// =====================
+// AUD-01 VOICE SYSTEM
+// =====================
+
+
+const SpeechRecognition =
+window.SpeechRecognition ||
+window.webkitSpeechRecognition;
+
+
+
+if(SpeechRecognition){
+
+
+
+let recognition =
+new SpeechRecognition();
+
+
+
+recognition.lang="ja-JP";
+
+
+recognition.continuous=true;
+
+
+
+recognition.onresult=(event)=>{
+
+
+
+let text =
+event.results
+[event.results.length-1]
+[0]
+.transcript;
+
+
+
+console.log(
+"COMMAND:",
+text
 );
 
-if(memoryLogs.length>10){
 
-memoryLogs.pop();
+
+commandProcess(text);
+
+
+
+};
+
+
+
+recognition.start();
+
+
 
 }
 
-document
-.getElementById("memoryLog")
-.innerHTML=
 
-memoryLogs.join("<br>");
+
+
+
+function commandProcess(text){
+
+
+text=text.toUpperCase();
+
+
+
+
+if(text.includes("UM")){
+
+
+    setMode("UM");
+
 
 }
 
-function notify(text){
 
-const n=
+
+if(text.includes("IM")){
+
+
+    setMode("IM");
+
+
+}
+
+
+
+if(text.includes("HELP")){
+
+
+    showHelp();
+
+
+}
+
+
+
+if(text.includes("END")){
+
+
+    shutdown();
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// =====================
+// AUDIO WAVE MONITOR
+// =====================
+
+
+let wave =
+document.getElementById("wave");
+
+
+
+for(let i=0;i<40;i++){
+
+
+
+let bar =
+document.createElement("div");
+
+
+
+bar.className="bar";
+
+
+
+wave.appendChild(bar);
+
+
+
+}
+
+
+
+
+
+setInterval(()=>{
+
 
 document
-.getElementById("notify");
+.querySelectorAll(".bar")
+.forEach((bar)=>{
 
-n.innerHTML=text;
 
-n.style.display="block";
+
+bar.style.height =
+
+(10 + Math.random()*30)
+
++"px";
+
+
+
+});
+
+
+
+},100);
+
+
+
+
+
+
+
+
+
+// =====================
+// MODULE MANAGER
+// =====================
+
+
+
+const MODULES={
+
+
+"CAM-01":
+"READY",
+
+
+"ENV-01":
+"READY",
+
+
+"AUD-01":
+"READY",
+
+
+"SYS-01":
+"READY"
+
+
+};
+
+
+
+
+console.log(
+"MODULE STATUS",
+MODULES
+);
+
+
+
+
+
+// =====================
+// AUTO START
+// =====================
+
+
 
 setTimeout(()=>{
 
-n.style.display="none";
 
-},2500);
+startCamera();
 
-}
 
-function updateClock(){
 
-const now=new Date();
-
-document
-.getElementById("clock")
-.innerHTML=
-
-now.toLocaleTimeString();
-
-if(sessionStart){
-
-const sec=
-
-Math.floor(
-
-(Date.now()-sessionStart)/1000
-
-);
-
-const m=
-
-String(Math.floor(sec/60))
-.padStart(2,"0");
-
-const s=
-
-String(sec%60)
-.padStart(2,"0");
-
-document
-.getElementById("session")
-.innerHTML=
-
-"SESSION "+m+":"+s;
-
-}
-
-}
-
-setInterval(updateClock,1000);
-
-updateClock();
-
-async function bootSystem(){
-
-sessionStart=Date.now();
-
-addMemory("Boot sequence started");
-
-const fill=
-
-document
-.getElementById("bootFill");
-
-for(let i=0;i<=100;i++){
-
-fill.style.width=i+"%";
-
-await new Promise(r=>setTimeout(r,18));
-
-}
-
-document
-.getElementById("boot")
-.style.display="none";
-
-notify("SYSTEM ONLINE");
-
-addMemory("SYSTEM READY");
-
-}
-
-document
-.getElementById("boot")
-.onclick=bootSystem;
-
-/*==========================================================
-Camera
-==========================================================*/
-
-let cameraStream=null;
-
-async function initCamera(){
-
-try{
-
-cameraStream=
-await navigator.mediaDevices.getUserMedia({
-
-video:{
-facingMode:"environment"
-},
-
-audio:false
-
-});
-
-document
-.getElementById("camera")
-.srcObject=cameraStream;
-
-document
-.getElementById("camStatus")
-.innerHTML="✔";
-addMemory("Camera Ready");
-
-}catch(e){
-
-document
-.getElementById("camStatus")
-.className="statusNG";
-
-document
-.getElementById("camStatus")
-.innerHTML="✖";
-
-addMemory("Camera Error");
-
-}
-
-}
-
-/*==========================================================
-Microphone
-==========================================================*/
-
-let audioContext;
-let analyser;
-
-async function initMicrophone(){
-
-try{
-
-const stream=
-await navigator.mediaDevices.getUserMedia({
-
-audio:true
-
-});
-
-audioContext=
-new(window.AudioContext||
-window.webkitAudioContext)();
-
-const source=
-audioContext.createMediaStreamSource(stream);
-
-analyser=
-audioContext.createAnalyser();
-
-analyser.fftSize=64;
-
-source.connect(analyser);
-
-drawWave();
-
-addMemory("Microphone Ready");
-
-}catch(e){
-
-document
-.getElementById("micStatus")
-.className="statusNG";
-
-document
-.getElementById("micStatus")
-.innerHTML="✖";
-
-addMemory("Microphone Error");
-
-}
-
-}
-
-function drawWave(){
-
-const canvas=
-document.getElementById("wave");
-
-const ctx=
-canvas.getContext("2d");
-
-canvas.width=canvas.clientWidth;
-canvas.height=canvas.clientHeight;
-
-const data=
-new Uint8Array(analyser.frequencyBinCount);
-
-function render(){
-
-requestAnimationFrame(render);
-
-analyser.getByteFrequencyData(data);
-
-ctx.clearRect(0,0,
-canvas.width,
-canvas.height);
-
-const w=
-canvas.width/data.length;
-
-for(let i=0;i<data.length;i++){
-
-const h=
-(data[i]/255)
-*canvas.height;
-
-ctx.fillStyle="#00F2FF";
-
-ctx.fillRect(
-
-i*w,
-
-canvas.height-h,
-
-w-1,
-
-h
-
-);
-
-}
-
-}
-
-render();
-
-}
-
-/*==========================================================
-Voice Log
-==========================================================*/
-
-function addVoice(text){
-
-voiceLogs.unshift(text);
-
-if(voiceLogs.length>8){
-
-voiceLogs.pop();
-
-}
-
-document
-.getElementById("voiceLog")
-.innerHTML=
-
-voiceLogs.join("<br>");
-
-}
-
-/*==========================================================
-Speech Recognition
-==========================================================*/
-
-function initVoice(){
-
-const SR=
-
-window.SpeechRecognition||
-
-window.webkitSpeechRecognition;
-
-if(!SR){
-
-document
-.getElementById("voiceStatus")
-.className="statusNG";
-
-document
-.getElementById("voiceStatus")
-.innerHTML="✖";
-
-return;
-
-}
-
-const rec=new SR();
-
-rec.lang="ja-JP";
-
-rec.continuous=true;
-
-rec.interimResults=false;
-
-rec.onresult=(e)=>{
-
-const text=
-
-e.results[
-e.results.length-1
-][0].transcript;
-
-document
-.getElementById("voiceText")
-.innerHTML=text;
-
-addVoice(text);
-
-addMemory("Voice : "+text);
-
-voiceCommand(text);
-
-};
-
-rec.onend=()=>{
-
-rec.start();
-
-};
-
-rec.start();
-
-addMemory("Voice Ready");
-
-}
-
-/*==========================================================
-Speech Synthesis
-==========================================================*/
-
-function speak(text){
-
-if(!("speechSynthesis" in window))
-return;
-
-const msg=
-new SpeechSynthesisUtterance();
-
-msg.lang="ja-JP";
-
-msg.text=text;
-
-msg.rate=1.0;
-
-msg.pitch=1.0;
-
-speechSynthesis.cancel();
-speechSynthesis.speak(msg);
-
-}
-
-/*==========================================================
-Voice Commands
-==========================================================*/
-
-function voiceCommand(text){
-
-text=text.trim();
-
-if(text.includes("ユーティリティモード")){
-
-currentMode="UTILITY";
-
-document
-.getElementById("mode")
-.innerHTML="UTILITY";
-
-notify("UTILITY MODE");
-
-addMemory("Mode Utility");
-
-speak("ユーティリティモード");
-
-}
-
-if(text.includes("イマージョンモード")){
-
-currentMode="IMMERSION";
-
-document
-.getElementById("mode")
-.innerHTML="IMMERSION";
-
-notify("IMMERSION MODE");
-
-addMemory("Mode Immersion");
-
-speak("イマージョンモード");
-
-}
-
-if(text.includes("ステータス")){
-
-notify("STATUS OK");
-
-speak("システム正常");
-
-}
-
-if(text.includes("ログ消去")){
-
-voiceLogs=[];
-
-document
-.getElementById("voiceLog")
-.innerHTML="";
-
-notify("VOICE LOG CLEARED");
-
-addMemory("Voice Log Cleared");
-
-}
-
-}
-
-/*==========================================================
-Boot Sound
-==========================================================*/
-
-function bootBeep(){
-
-try{
-
-const ctx=
-new(window.AudioContext||
-window.webkitAudioContext)();
-
-const osc=
-ctx.createOscillator();
-
-const gain=
-ctx.createGain();
-
-osc.type="sine";
-
-osc.frequency.value=880;
-
-gain.gain.value=0.05;
-
-osc.connect(gain);
-
-gain.connect(ctx.destination);
-
-osc.start();
-
-osc.stop(ctx.currentTime+0.15);
-
-}catch(e){}
-
-}
-
-/*==========================================================
-Boot Finish
-==========================================================*/
-
-async function startSystem(){
-
-bootBeep();
-
-await initCamera();
-
-await initMicrophone();
-
-initVoice();
-
-notify("SYSTEM ONLINE");
-
-addMemory("UtilityOS Ready");
-
-speak("システム起動");
-
-}
-
-/*==========================================================
-Boot Override
-==========================================================*/
-
-async function bootSystem(){
-
-sessionStart=Date.now();
-
-addMemory("Boot sequence started");
-
-const fill=
-document.getElementById("bootFill");
-
-for(let i=0;i<=100;i++){
-
-fill.style.width=i+"%";
-
-await new Promise(r=>setTimeout(r,18));
-
-}
-
-document
-.getElementById("boot")
-.style.display="none";
-
-await startSystem();
-
-}
-
-/*==========================================================
-Auto Clock
-==========================================================*/
-
-updateClock();
-
-setInterval(updateClock,1000);
-
-/*==========================================================
-End Part1
-==========================================================*/
-
+},3500);
 </script>
-
-</body>
-
-</html>
